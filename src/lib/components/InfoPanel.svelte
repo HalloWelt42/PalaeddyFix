@@ -8,6 +8,8 @@
 
   let copied = $state<boolean>(false);
   let copyTimer: ReturnType<typeof setTimeout> | null = null;
+  let speaking = $state<boolean>(false);
+  const canSpeak = typeof window !== "undefined" && "speechSynthesis" in window;
 
   async function copyContent(): Promise<void> {
     if (!topic) return;
@@ -20,6 +22,28 @@
     copied = true;
     if (copyTimer) clearTimeout(copyTimer);
     copyTimer = setTimeout(() => (copied = false), 1400);
+  }
+
+  function toggleSpeak(): void {
+    if (!topic || !canSpeak) return;
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      speaking = false;
+      return;
+    }
+    const text = topicAsPlainText(topic);
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "de-DE";
+    utter.rate = 1;
+    utter.onend = () => {
+      speaking = false;
+    };
+    utter.onerror = () => {
+      speaking = false;
+    };
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utter);
+    speaking = true;
   }
 
   let dragState: {
@@ -131,6 +155,17 @@
         </div>
       </div>
       <div class="ctrl">
+        {#if canSpeak}
+          <button
+            type="button"
+            class="ctrl-btn speak-btn"
+            class:active={speaking}
+            title={speaking ? "Vorlesen stoppen" : "Inhalt vorlesen"}
+            onclick={toggleSpeak}
+          >
+            <Icon name={speaking ? "stop" : "speaker"} size={12} />
+          </button>
+        {/if}
         <button
           type="button"
           class="ctrl-btn copy-btn"
@@ -278,6 +313,11 @@
     border-color: var(--border);
   }
   .copy-btn.copied {
+    color: var(--info);
+    border-color: var(--info-line);
+    background: var(--info-soft);
+  }
+  .speak-btn.active {
     color: var(--info);
     border-color: var(--info-line);
     background: var(--info-soft);

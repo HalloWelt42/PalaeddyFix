@@ -16,7 +16,9 @@
     | "magic"
     | "info"
     | "check"
-    | "copy";
+    | "copy"
+    | "speaker"
+    | "stop";
 </script>
 
 <script lang="ts">
@@ -125,5 +127,15 @@
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={stroke} stroke-linecap="square" stroke-linejoin="miter">
     <rect x="9" y="9" width="11" height="11" rx="1" />
     <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+  </svg>
+{:else if name === "speaker"}
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={stroke} stroke-linecap="square" stroke-linejoin="miter">
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+  </svg>
+{:else if name === "stop"}
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={stroke} stroke-linecap="square" stroke-linejoin="miter">
+    <rect x="6" y="6" width="12" height="12" />
   </svg>
 {/if}
