@@ -21,9 +21,7 @@
   }
 
   function formatPixels(n: number): string {
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)} Mpx`;
-    if (n >= 1000) return `${(n / 1000).toFixed(1)} kpx`;
-    return `${n} px`;
+    return `${n.toLocaleString("de-DE")} px`;
   }
 </script>
 
