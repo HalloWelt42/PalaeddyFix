@@ -22,6 +22,9 @@
 
   function onDragStart(e: PointerEvent): void {
     if (info.maximized) return;
+    const tgt = e.target as HTMLElement;
+    if (tgt.closest(".ctrl")) return;
+    if (e.button !== 0) return;
     dragState = {
       startX: e.clientX,
       startY: e.clientY,
@@ -260,44 +263,44 @@
   }
 
   .content {
-    padding: 16px 20px;
+    padding: 20px 24px;
     overflow: auto;
     font-family: var(--font-button);
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 500;
     line-height: 1.6;
     color: var(--text);
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
   }
   .content p {
     font-family: var(--font-button);
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 500;
     color: var(--text);
   }
   .content h4 {
     font-family: var(--font-button);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--text);
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-top: 6px;
-    padding-bottom: 4px;
+    margin-top: 8px;
+    padding-bottom: 6px;
     border-bottom: 1px solid var(--border);
   }
   .content ul {
     margin: 0;
-    padding-left: 20px;
+    padding-left: 22px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
   }
   .content li {
     font-family: var(--font-button);
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 500;
     color: var(--text);
   }

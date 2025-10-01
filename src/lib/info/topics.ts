@@ -36,6 +36,23 @@ const topics: Record<string, InfoTopic> = {
         type: "p",
         text: "Ein Foto enthält oft zehntausende unterschiedlicher Farbwerte, die sich im letzten Bit unterscheiden. Ohne Gruppierung wäre eine Liste unbrauchbar. Median-Cut fasst visuell ähnliche Farben zusammen.",
       },
+      { type: "h", text: "Zusatzwissen: Was ist der Median?" },
+      {
+        type: "p",
+        text: "Der Median ist der Wert in der Mitte einer sortierten Reihe. Sortiert man alle Werte der Größe nach, liegt der Median genau auf der mittleren Position.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Ungerade Anzahl: Der Median ist das Element in der Mitte. Für [1, 3, 6, 7, 9] ist er 6.",
+          "Gerade Anzahl: Üblich ist der Durchschnitt der beiden Mittelwerte. Für [1, 3, 6, 7] liegt der Median bei 4,5.",
+          "Im Vergleich zum Mittelwert: Der Median bleibt stabil, wenn es einzelne Ausreißer gibt. Ein Gehalts-Ausreißer ändert den Mittelwert spürbar, den Median dagegen kaum.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Bei Median-Cut wird der Median verwendet, weil er die Pixel einer Kiste in zwei gleich große Hälften teilt -- unabhängig davon, ob der Farbverlauf eine ausgefranste oder eine kompakte Verteilung hat.",
+      },
     ],
   },
 
