@@ -1,5 +1,6 @@
 <script lang="ts">
   import { info } from "../../stores/info.svelte";
+  import Icon from "./Icon.svelte";
   import type { Snippet } from "svelte";
 
   type Props = {
@@ -18,7 +19,9 @@
 
 <button type="button" class="info-link" onclick={open} title="Mehr erfahren">
   {@render children()}
-  <span class="mark" aria-hidden="true">?</span>
+  <span class="mark" aria-hidden="true">
+    <Icon name="info" size={12} />
+  </span>
 </button>
 
 <style>
@@ -31,29 +34,22 @@
     cursor: help;
     display: inline-flex;
     align-items: baseline;
-    gap: 3px;
-    text-decoration: underline dotted var(--text-mute);
+    gap: 4px;
+    text-decoration: underline dotted var(--info-line);
     text-underline-offset: 3px;
   }
   .info-link:hover {
-    color: var(--text);
-    text-decoration-color: var(--text);
+    color: var(--info);
+    text-decoration-color: var(--info);
   }
   .mark {
     display: inline-grid;
     place-items: center;
-    width: 12px;
-    height: 12px;
-    font-family: var(--font-mono);
-    font-size: 9px;
-    font-weight: 700;
-    color: var(--text-mute);
-    border: 1px solid currentColor;
-    border-radius: 50%;
+    color: var(--info);
     line-height: 1;
-    transform: translateY(-1px);
+    transform: translateY(1px);
   }
   .info-link:hover .mark {
-    color: var(--text);
+    color: var(--info);
   }
 </style>

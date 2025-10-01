@@ -33,13 +33,13 @@
     align-items: center;
     gap: 6px;
     padding: 3px 8px;
-    background: var(--surface-2);
-    border: 1px solid var(--border-strong);
+    background: var(--info-soft);
+    border: 1px solid var(--info-line);
     font-family: var(--font-mono);
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: var(--text);
+    color: var(--info);
   }
   h4 {
     font-family: var(--font-button);

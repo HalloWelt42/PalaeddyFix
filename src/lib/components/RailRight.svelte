@@ -35,7 +35,7 @@
   </div>
   <div class="group">
     <button
-      class="rail-btn"
+      class="rail-btn info-btn"
       class:active={info.open}
       title="Info & Hilfe"
       type="button"
@@ -90,5 +90,19 @@
     bottom: 8px;
     width: 2px;
     background: var(--accent);
+  }
+  .info-btn {
+    color: var(--info);
+  }
+  .info-btn:hover {
+    color: var(--info);
+    background: var(--info-soft);
+  }
+  .info-btn.active {
+    color: var(--info);
+    background: var(--info-soft);
+  }
+  .info-btn.active::after {
+    background: var(--info);
   }
 </style>

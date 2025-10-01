@@ -2,9 +2,25 @@
   import Icon from "./ui/Icon.svelte";
   import CodeBlock from "./ui/CodeBlock.svelte";
   import { info } from "../stores/info.svelte";
-  import { getTopic } from "../info/topics";
+  import { getTopic, topicAsPlainText } from "../info/topics";
 
   const topic = $derived(info.topicKey ? getTopic(info.topicKey) : null);
+
+  let copied = $state<boolean>(false);
+  let copyTimer: ReturnType<typeof setTimeout> | null = null;
+
+  async function copyContent(): Promise<void> {
+    if (!topic) return;
+    const text = topicAsPlainText(topic);
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      /* ignore */
+    }
+    copied = true;
+    if (copyTimer) clearTimeout(copyTimer);
+    copyTimer = setTimeout(() => (copied = false), 1400);
+  }
 
   let dragState: {
     startX: number;
@@ -108,13 +124,22 @@
       role="toolbar"
     >
       <div class="drag-title">
-        <Icon name="info" size={14} />
+        <Icon name="info" size={28} />
         <div class="t">
           <span class="k">{topic.title}</span>
           {#if topic.subtitle}<span class="s">{topic.subtitle}</span>{/if}
         </div>
       </div>
       <div class="ctrl">
+        <button
+          type="button"
+          class="ctrl-btn copy-btn"
+          class:copied
+          title={copied ? "In Zwischenablage" : "Inhalt kopieren"}
+          onclick={copyContent}
+        >
+          <Icon name={copied ? "check" : "copy"} size={12} />
+        </button>
         <button
           type="button"
           class="ctrl-btn"
@@ -172,7 +197,7 @@
   .floating {
     position: fixed;
     background: var(--surface);
-    border: 1px solid var(--border-strong);
+    border: 1px solid var(--info-line);
     display: grid;
     grid-template-rows: 44px 1fr;
     box-shadow: 0 20px 56px #0008;
@@ -190,8 +215,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 12px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface-2);
+    border-bottom: 1px solid var(--info-line);
+    background: var(--info-soft);
     cursor: grab;
     touch-action: none;
   }
@@ -219,7 +244,7 @@
     font-family: var(--font-button);
     font-size: 13px;
     font-weight: 600;
-    color: var(--text);
+    color: var(--info);
     letter-spacing: 0.3px;
   }
   .t .s {
@@ -227,6 +252,9 @@
     font-size: 11px;
     font-weight: 500;
     color: var(--text-dim);
+  }
+  .drag-title :global(svg) {
+    color: var(--info);
   }
 
   .ctrl {
@@ -248,6 +276,11 @@
     color: var(--text);
     background: var(--surface);
     border-color: var(--border);
+  }
+  .copy-btn.copied {
+    color: var(--info);
+    border-color: var(--info-line);
+    background: var(--info-soft);
   }
   .mini {
     display: block;

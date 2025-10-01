@@ -302,3 +302,23 @@ export function getTopic(key: string): InfoTopic | null {
 export function listTopics(): InfoTopic[] {
   return Object.values(topics);
 }
+
+export function topicAsPlainText(topic: InfoTopic): string {
+  const lines: string[] = [];
+  lines.push(topic.title);
+  if (topic.subtitle) lines.push(topic.subtitle);
+  lines.push("");
+  for (const block of topic.body) {
+    if (block.type === "p") {
+      lines.push(block.text, "");
+    } else if (block.type === "h") {
+      lines.push(block.text, "".padEnd(block.text.length, "-"), "");
+    } else if (block.type === "ul") {
+      for (const item of block.items) lines.push("- " + item);
+      lines.push("");
+    } else if (block.type === "code") {
+      lines.push(block.code, "");
+    }
+  }
+  return lines.join("\n").trim() + "\n";
+}
