@@ -10,7 +10,7 @@
 </script>
 
 <div class="bar" role="img" aria-label="Farbverteilung">
-  {#each colors as c (c.hex)}
+  {#each colors as c, i (i)}
     <div
       class="seg"
       style="background: {c.hex}; width: {c.percent}%;"
