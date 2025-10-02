@@ -12,6 +12,18 @@
   let flash = $state<string | null>(null);
   let flashTimer: ReturnType<typeof setTimeout> | null = null;
 
+  type SortMode = "frequent" | "rare";
+  let sortMode = $state<SortMode>("frequent");
+
+  const sortedColors = $derived(
+    sortMode === "rare" ? [...analysis.colors].slice().reverse() : analysis.colors,
+  );
+
+  const sortOptions: { value: SortMode; label: string }[] = [
+    { value: "frequent", label: "Häufig" },
+    { value: "rare", label: "Selten" },
+  ];
+
   $effect(() => {
     const id = selection.id;
     if (!id) {
@@ -99,6 +111,13 @@
     {#if analysis.error}
       <div class="error">Fehler: {analysis.error}</div>
     {/if}
+    {#if analysis.colors.length > 0 && analysis.colors.length < analysis.colorCount}
+      <div class="notice">
+        Das Bild enthält nur <b>{analysis.colors.length}</b> unterscheidbare Farben --
+        weniger als die <b>{analysis.colorCount}</b> geforderten. Mehr ist für dieses Bild
+        per <InfoLink topic="median-cut">median-cut</InfoLink> nicht möglich.
+      </div>
+    {/if}
     <div class="method-hint">
       Methode: <InfoLink topic="median-cut">median-cut</InfoLink> mit <InfoLink topic="quantisierung">Quantisierung</InfoLink>
     </div>
@@ -106,13 +125,22 @@
 
   {#if analysis.colors.length > 0}
     <div class="section">
-      <h3>Verteilung</h3>
-      <StackedBar colors={analysis.colors} />
+      <div class="between">
+        <h3 class="no-border">Verteilung</h3>
+        <Segmented
+          options={sortOptions}
+          value={sortMode}
+          onchange={(v) => (sortMode = v)}
+        />
+      </div>
+      <StackedBar colors={sortedColors} />
     </div>
 
     <div class="section">
       <div class="between">
-        <h3 class="no-border">Farben</h3>
+        <h3 class="no-border">
+          {sortMode === "rare" ? "Seltenste Farben" : "Häufigste Farben"}
+        </h3>
         <Segmented
           options={formatOptions}
           value={settings.state.copyFormat}
@@ -120,7 +148,7 @@
         />
       </div>
       <ul class="colors">
-        {#each analysis.colors as c, i (i + "-" + c.hex)}
+        {#each sortedColors as c, i (i + "-" + c.hex)}
           <li>
             <button
               type="button"
@@ -134,7 +162,7 @@
                 <span class="hex">{c.hex}</span>
                 <span class="fmt">{formatColor(c.rgb, settings.state.copyFormat)}</span>
               </span>
-              <span class="pct">{c.percent.toFixed(1)}%</span>
+              <span class="pct">{c.percent.toFixed(2)} %</span>
             </button>
           </li>
         {/each}
