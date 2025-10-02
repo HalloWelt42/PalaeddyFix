@@ -76,7 +76,7 @@
         id="cc"
         type="range"
         min="2"
-        max="128"
+        max="256"
         step="1"
         value={analysis.colorCount}
         oninput={onCount}
