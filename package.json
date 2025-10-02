@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@types/prismjs": "^1.26.6",
+    "marked": "^18.0.2",
     "prismjs": "^1.30.0"
   }
 }

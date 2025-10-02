@@ -1,6 +1,5 @@
 <script lang="ts">
   import Icon from "./ui/Icon.svelte";
-  import CodeBlock from "./ui/CodeBlock.svelte";
   import { info } from "../stores/info.svelte";
   import { getTopic, topicAsPlainText } from "../info/topics";
 
@@ -199,21 +198,7 @@
 
     {#if !info.minimized}
       <div class="content">
-        {#each topic.body as block, i (i)}
-          {#if block.type === "p"}
-            <p>{block.text}</p>
-          {:else if block.type === "h"}
-            <h4>{block.text}</h4>
-          {:else if block.type === "ul"}
-            <ul>
-              {#each block.items as item (item)}
-                <li>{item}</li>
-              {/each}
-            </ul>
-          {:else if block.type === "code"}
-            <CodeBlock code={block.code} lang={block.lang ?? "plain"} />
-          {/if}
-        {/each}
+        {@html topic.html}
       </div>
 
       <div
@@ -343,39 +328,89 @@
     font-weight: 500;
     line-height: 1.6;
     color: var(--text);
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
   }
-  .content p {
+  .content :global(p) {
     font-family: var(--font-button);
     font-size: 17px;
     font-weight: 500;
     color: var(--text);
+    margin: 0 0 14px;
   }
-  .content h4 {
+  .content :global(p:last-child) {
+    margin-bottom: 0;
+  }
+  .content :global(h1),
+  .content :global(h2),
+  .content :global(h3) {
     font-family: var(--font-button);
     font-size: 14px;
     font-weight: 700;
-    color: var(--text);
+    color: var(--info);
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-top: 8px;
+    margin: 18px 0 10px;
     padding-bottom: 6px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--info-line);
   }
-  .content ul {
-    margin: 0;
+  .content :global(h1:first-child),
+  .content :global(h2:first-child),
+  .content :global(h3:first-child) {
+    margin-top: 0;
+  }
+  .content :global(ul),
+  .content :global(ol) {
+    margin: 0 0 14px;
     padding-left: 22px;
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
-  .content li {
+  .content :global(li) {
     font-family: var(--font-button);
     font-size: 16px;
     font-weight: 500;
     color: var(--text);
+  }
+  .content :global(li strong) {
+    color: var(--info);
+    font-weight: 700;
+  }
+  .content :global(strong) {
+    color: var(--text);
+    font-weight: 700;
+  }
+  .content :global(em) {
+    color: var(--text-dim);
+    font-style: italic;
+  }
+  .content :global(code) {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    background: var(--surface-2);
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+  }
+  .content :global(pre) {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    margin: 0 0 14px;
+    overflow: auto;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .content :global(pre code) {
+    background: none;
+    border: 0;
+    padding: 0;
+    font-size: inherit;
+  }
+  .content :global(a) {
+    color: var(--info);
+    text-decoration: underline;
   }
 
   .resize {

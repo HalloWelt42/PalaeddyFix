@@ -37,9 +37,9 @@
     <button
       class="rail-btn info-btn"
       class:active={info.open}
-      title="Info & Hilfe"
+      title={info.open ? "Info schließen" : "Info öffnen"}
       type="button"
-      onclick={() => info.show(info.topicKey ?? "median-cut")}
+      onclick={() => (info.open ? info.close() : info.show(info.topicKey ?? "median-cut"))}
     >
       <Icon name="info" size={18} />
     </button>
