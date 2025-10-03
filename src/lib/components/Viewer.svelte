@@ -178,14 +178,7 @@
     position: relative;
     min-height: 0;
     overflow: hidden;
-    background:
-      linear-gradient(45deg, #1a1a20 25%, transparent 25%),
-      linear-gradient(-45deg, #1a1a20 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #1a1a20 75%),
-      linear-gradient(-45deg, transparent 75%, #1a1a20 75%);
-    background-size: 16px 16px;
-    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
-    background-color: #121217;
+    background: var(--surface-2);
     border: 1px solid var(--border);
     display: grid;
     place-items: center;
@@ -194,9 +187,9 @@
     max-width: 100%;
     max-height: 100%;
     display: block;
-    image-rendering: pixelated;
+    image-rendering: auto;
     cursor: crosshair;
-    box-shadow: 0 8px 32px #000a;
+    box-shadow: 0 8px 32px #0006;
   }
 
   .dropper {
