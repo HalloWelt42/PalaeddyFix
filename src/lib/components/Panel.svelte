@@ -2,6 +2,7 @@
   import Icon from "./ui/Icon.svelte";
   import ToolAnalysis from "./tools/ToolAnalysis.svelte";
   import ToolExport from "./tools/ToolExport.svelte";
+  import ToolPaletteMatch from "./tools/ToolPaletteMatch.svelte";
   import ToolStub from "./tools/ToolStub.svelte";
   import { ui } from "../stores/ui.svelte";
 
@@ -26,11 +27,7 @@
     {#if ui.activeTool === "analysis"}
       <ToolAnalysis />
     {:else if ui.activeTool === "palette"}
-      <ToolStub
-        title="Paletten-Matcher"
-        plannedIn="v0.2"
-        description="Vergleicht die Farben des Bildes mit bekannten Paletten (Solarized, Dracula, Nord, Gruvbox, Monokai, One Dark) und zeigt die beste Übereinstimmung."
-      />
+      <ToolPaletteMatch />
     {:else if ui.activeTool === "snap"}
       <ToolStub
         title="Snap-to-Palette"
