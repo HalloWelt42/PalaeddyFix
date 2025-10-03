@@ -21,6 +21,11 @@ class AnalysisStore {
   rareRunning = $state<boolean>(false);
   rareProgress = $state<number>(0);
   rareCached = $state<boolean>(false);
+  rareColorCount = $state<number>(RARE_COLOR_COUNT);
+
+  setRareColorCount(n: number): void {
+    this.rareColorCount = Math.max(8, Math.min(256, Math.round(n)));
+  }
 
   clear(): void {
     this.colors = [];
@@ -51,7 +56,7 @@ class AnalysisStore {
       this.totalPixels = 0;
       this.cached = false;
     }
-    const rareCache = await getAnalysis(imageId, RARE_COLOR_COUNT);
+    const rareCache = await getAnalysis(imageId, this.rareColorCount);
     if (rareCache) {
       this.rareColors = rareCache.colors;
       this.rareCached = true;
@@ -60,6 +65,18 @@ class AnalysisStore {
       this.rareCached = false;
     }
     return !!cached;
+  }
+
+  async loadRareCached(imageId: string): Promise<boolean> {
+    const rareCache = await getAnalysis(imageId, this.rareColorCount);
+    if (rareCache) {
+      this.rareColors = rareCache.colors;
+      this.rareCached = true;
+      return true;
+    }
+    this.rareColors = [];
+    this.rareCached = false;
+    return false;
   }
 
   async analyze(imageId: string): Promise<void> {
@@ -107,6 +124,7 @@ class AnalysisStore {
   async analyzeRare(imageId: string): Promise<void> {
     const img = await getImage(imageId);
     if (!img) return;
+    const targetCount = this.rareColorCount;
     this.rareRunning = true;
     this.rareProgress = 0;
     this.error = null;
@@ -114,7 +132,7 @@ class AnalysisStore {
     try {
       const outcome: AnalysisOutcome = await runAnalysis({
         blob: img.blob,
-        colorCount: RARE_COLOR_COUNT,
+        colorCount: targetCount,
         downscaleTo: settings.state.downscaleTo,
         alpha: settings.state.alpha,
         onProgress: (p) => {
@@ -128,9 +146,9 @@ class AnalysisStore {
       this.rareCached = false;
 
       await putAnalysis({
-        key: analysisKey(imageId, RARE_COLOR_COUNT),
+        key: analysisKey(imageId, targetCount),
         imageId,
-        colorCount: RARE_COLOR_COUNT,
+        colorCount: targetCount,
         algorithm: "median-cut",
         downscaleTo: settings.state.downscaleTo,
         alpha: settings.state.alpha,

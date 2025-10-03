@@ -4,10 +4,13 @@
   import Segmented from "../ui/Segmented.svelte";
   import InfoLink from "../ui/InfoLink.svelte";
   import { selection } from "../../stores/selection.svelte";
-  import { analysis, RARE_COLOR_COUNT } from "../../stores/analysis.svelte";
+  import { analysis } from "../../stores/analysis.svelte";
   import { settings } from "../../stores/settings.svelte";
   import { formatColor, isLight } from "../../analysis/convert";
   import type { CopyFormat, PaletteColor } from "../../storage/schema";
+
+  type TabKey = "frequent" | "rare";
+  let activeTab = $state<TabKey>("frequent");
 
   let flash = $state<string | null>(null);
   let flashTimer: ReturnType<typeof setTimeout> | null = null;
@@ -21,15 +24,19 @@
     void analysis.loadCached(id);
   });
 
-  async function onCount(e: Event): Promise<void> {
+  async function onFrequentCount(e: Event): Promise<void> {
     const v = Number((e.target as HTMLInputElement).value);
     analysis.setColorCount(v);
-    if (selection.id) {
-      await analysis.loadCached(selection.id);
-    }
+    if (selection.id) await analysis.loadCached(selection.id);
   }
 
-  async function doAnalyze(): Promise<void> {
+  async function onRareCount(e: Event): Promise<void> {
+    const v = Number((e.target as HTMLInputElement).value);
+    analysis.setRareColorCount(v);
+    if (selection.id) await analysis.loadRareCached(selection.id);
+  }
+
+  async function doAnalyzeFrequent(): Promise<void> {
     if (!selection.id) return;
     await analysis.analyze(selection.id);
   }
@@ -76,131 +83,163 @@
     <p class="sub">Lege ein Bild in die linke Fläche, um Farben zu analysieren.</p>
   </div>
 {:else}
-  <div class="sub-panel">
-    <div class="sub-head">
-      <h3>Häufigste Farben</h3>
-      {#if analysis.cached && !analysis.running && analysis.colors.length > 0}
-        <span class="tag">Cache</span>
-      {/if}
-    </div>
-    <div class="control-row">
-      <label class="k" for="cc">Farben</label>
-      <input
-        id="cc"
-        type="range"
-        min="2"
-        max="256"
-        step="1"
-        value={analysis.colorCount}
-        oninput={onCount}
-      />
-      <span class="n">{analysis.colorCount}</span>
-    </div>
-    <div class="actions">
+  <div class="tabs">
+    <button
+      type="button"
+      class="tab"
+      class:active={activeTab === "frequent"}
+      onclick={() => (activeTab = "frequent")}
+    >
+      Häufigste
+    </button>
+    <button
+      type="button"
+      class="tab"
+      class:active={activeTab === "rare"}
+      onclick={() => (activeTab = "rare")}
+    >
+      Seltenste
+    </button>
+  </div>
+
+  {#if activeTab === "frequent"}
+    <div class="tab-panel">
+      <div class="control-row">
+        <label class="k" for="cc-freq">Farben</label>
+        <input
+          id="cc-freq"
+          type="range"
+          min="2"
+          max="256"
+          step="1"
+          value={analysis.colorCount}
+          oninput={onFrequentCount}
+        />
+        <span class="n">{analysis.colorCount}</span>
+      </div>
+
       <button
         type="button"
-        class="btn btn-primary"
-        onclick={doAnalyze}
+        class="btn btn-primary big"
+        onclick={doAnalyzeFrequent}
         disabled={analysis.running || analysis.rareRunning}
       >
         {#if analysis.running}
           <span class="btn-progress" style="width: {analysis.progress * 100}%"></span>
-          <span>Analyse {Math.round(analysis.progress * 100)} %</span>
+          <span class="btn-label">Analyse {Math.round(analysis.progress * 100)} %</span>
         {:else}
-          Häufigste analysieren
+          <span class="btn-label">Häufigste analysieren</span>
         {/if}
       </button>
-    </div>
 
-    {#if analysis.colors.length > 0}
-      <StackedBar colors={analysis.colors} />
-      <div class="between">
-        <span class="count">{analysis.colors.length} Farben</span>
-        <Segmented
-          options={formatOptions}
-          value={settings.state.copyFormat}
-          onchange={onFormatChange}
-        />
-      </div>
-      <ul class="colors">
-        {#each analysis.colors as c, i (i + "-" + c.hex)}
-          <li>
-            <button
-              type="button"
-              class="color-btn"
-              onclick={() => copyColor(c)}
-              title="Klick zum Kopieren"
-              style="--sw: {c.hex}; --fg: {isLight(c.rgb) ? '#0d0d11' : '#ffffff'};"
-            >
-              <span class="swatch"></span>
-              <span class="vals">
-                <span class="hex">{c.hex}</span>
-                <span class="fmt">{formatColor(c.rgb, settings.state.copyFormat)}</span>
-              </span>
-              <span class="pct">{c.percent.toFixed(2)} %</span>
-            </button>
-          </li>
-        {/each}
-      </ul>
-    {/if}
-  </div>
+      {#if analysis.cached && !analysis.running && analysis.colors.length > 0}
+        <div class="tag-row"><span class="tag">Cache</span></div>
+      {/if}
 
-  <div class="sub-panel">
-    <div class="sub-head">
-      <h3>Seltenste Farben</h3>
-      <span class="fixed">Bucket-Größe <b>{RARE_COLOR_COUNT}</b></span>
-      {#if analysis.rareCached && !analysis.rareRunning && analysis.rareColors.length > 0}
-        <span class="tag">Cache</span>
+      {#if analysis.colors.length > 0}
+        <StackedBar colors={analysis.colors} />
+        <div class="between">
+          <span class="count">{analysis.colors.length} Farben</span>
+          <Segmented
+            options={formatOptions}
+            value={settings.state.copyFormat}
+            onchange={onFormatChange}
+          />
+        </div>
+        <ul class="colors">
+          {#each analysis.colors as c, i (i + "-f-" + c.hex)}
+            <li>
+              <button
+                type="button"
+                class="color-btn"
+                onclick={() => copyColor(c)}
+                title="Klick zum Kopieren"
+                style="--sw: {c.hex};"
+              >
+                <span class="swatch"></span>
+                <span class="vals">
+                  <span class="hex">{c.hex}</span>
+                  <span class="fmt">{formatColor(c.rgb, settings.state.copyFormat)}</span>
+                </span>
+                <span class="pct">{c.percent.toFixed(2)} %</span>
+              </button>
+            </li>
+          {/each}
+        </ul>
       {/if}
     </div>
-    <div class="actions">
+  {:else}
+    <div class="tab-panel">
+      <div class="control-row">
+        <label class="k" for="cc-rare">Buckets</label>
+        <input
+          id="cc-rare"
+          type="range"
+          min="8"
+          max="256"
+          step="1"
+          value={analysis.rareColorCount}
+          oninput={onRareCount}
+        />
+        <span class="n">{analysis.rareColorCount}</span>
+      </div>
+
       <button
         type="button"
-        class="btn btn-primary"
+        class="btn btn-primary big"
         onclick={doAnalyzeRare}
         disabled={analysis.running || analysis.rareRunning}
       >
         {#if analysis.rareRunning}
           <span class="btn-progress" style="width: {analysis.rareProgress * 100}%"></span>
-          <span>Analyse {Math.round(analysis.rareProgress * 100)} %</span>
+          <span class="btn-label">Analyse {Math.round(analysis.rareProgress * 100)} %</span>
         {:else}
-          Seltenste analysieren
+          <span class="btn-label">Seltenste analysieren</span>
         {/if}
       </button>
-    </div>
 
-    {#if analysis.rareColors.length > 0}
-      <StackedBar colors={rareSorted} />
-      <div class="between">
-        <span class="count">{analysis.rareColors.length} Farben, aufsteigend</span>
-      </div>
-      <ul class="colors">
-        {#each rareSorted as c, i (i + "-r-" + c.hex)}
-          <li>
-            <button
-              type="button"
-              class="color-btn"
-              onclick={() => copyColor(c)}
-              title="Klick zum Kopieren"
-              style="--sw: {c.hex}; --fg: {isLight(c.rgb) ? '#0d0d11' : '#ffffff'};"
-            >
-              <span class="swatch"></span>
-              <span class="vals">
-                <span class="hex">{c.hex}</span>
-                <span class="fmt">{formatColor(c.rgb, settings.state.copyFormat)}</span>
-              </span>
-              <span class="pct">{c.percent.toFixed(3)} %</span>
-            </button>
-          </li>
-        {/each}
-      </ul>
-    {:else if !analysis.rareRunning}
-      <div class="hint">
-        Nutzt eine feine Quantisierung mit {RARE_COLOR_COUNT} Buckets,
-        damit auch kleine Farbanteile sichtbar werden.
-      </div>
-    {/if}
-  </div>
+      {#if analysis.rareCached && !analysis.rareRunning && analysis.rareColors.length > 0}
+        <div class="tag-row"><span class="tag">Cache</span></div>
+      {/if}
+
+      {#if analysis.rareColors.length > 0}
+        <StackedBar colors={rareSorted} />
+        <div class="between">
+          <span class="count">{analysis.rareColors.length} Farben, aufsteigend</span>
+          <Segmented
+            options={formatOptions}
+            value={settings.state.copyFormat}
+            onchange={onFormatChange}
+          />
+        </div>
+        <ul class="colors">
+          {#each rareSorted as c, i (i + "-r-" + c.hex)}
+            <li>
+              <button
+                type="button"
+                class="color-btn"
+                onclick={() => copyColor(c)}
+                title="Klick zum Kopieren"
+                style="--sw: {c.hex};"
+              >
+                <span class="swatch"></span>
+                <span class="vals">
+                  <span class="hex">{c.hex}</span>
+                  <span class="fmt">{formatColor(c.rgb, settings.state.copyFormat)}</span>
+                </span>
+                <span class="pct">{c.percent.toFixed(3)} %</span>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {:else if !analysis.rareRunning}
+        <div class="hint">
+          Analysiert das Bild mit {analysis.rareColorCount} Buckets. Je höher die
+          Bucket-Zahl, desto feiner werden Ausreißer-Farben sichtbar.
+        </div>
+      {/if}
+    </div>
+  {/if}
 
   <div class="method-hint">
     Methode: <InfoLink topic="median-cut">median-cut</InfoLink>
@@ -239,45 +278,40 @@
     color: var(--text-mute);
   }
 
-  .sub-panel {
-    border: 1px solid var(--border);
-    background: var(--bg);
-    padding: 12px;
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border-bottom: 1px solid var(--border-strong);
     margin-bottom: 14px;
+  }
+  .tab {
+    background: transparent;
+    color: var(--text-dim);
+    border: 0;
+    border-bottom: 2px solid transparent;
+    padding: 10px 12px;
+    font-family: var(--font-button);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-bottom: -1px;
+  }
+  .tab:hover {
+    color: var(--text);
+  }
+  .tab.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-panel {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-  }
-  .sub-head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .sub-head h3 {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--text);
-    font-weight: 600;
-    flex: 1;
-  }
-  .tag {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border: 1px solid var(--border-strong);
-    padding: 1px 6px;
-  }
-  .fixed {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-dim);
-  }
-  .fixed b {
-    color: var(--text);
-    font-weight: 500;
+    gap: 12px;
+    margin-bottom: 14px;
   }
 
   .control-row {
@@ -302,10 +336,6 @@
     accent-color: var(--text);
   }
 
-  .actions {
-    display: flex;
-    gap: 6px;
-  }
   .btn {
     position: relative;
     overflow: hidden;
@@ -316,11 +346,14 @@
     font-size: 12px;
     border-radius: var(--radius-btn);
     cursor: pointer;
-    width: 100%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
+  }
+  .btn.big {
+    padding: 12px 14px;
+    font-size: 13px;
   }
   .btn-primary {
     background: var(--text);
@@ -344,9 +377,22 @@
     z-index: 0;
     transition: width 0.15s linear;
   }
-  .btn-primary :global(span) {
+  .btn-label {
     position: relative;
     z-index: 1;
+  }
+
+  .tag-row {
+    display: flex;
+  }
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: 1px solid var(--border-strong);
+    padding: 2px 6px;
   }
 
   .between {
@@ -365,12 +411,13 @@
 
   .hint {
     font-family: var(--font-button);
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-dim);
-    padding: 8px 10px;
+    padding: 10px 12px;
     background: var(--info-soft);
     border: 1px solid var(--info-line);
     border-radius: 3px;
+    line-height: 1.45;
   }
 
   .error {
@@ -396,7 +443,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    max-height: 360px;
+    max-height: 320px;
     overflow: auto;
     border: 1px solid var(--border);
   }
