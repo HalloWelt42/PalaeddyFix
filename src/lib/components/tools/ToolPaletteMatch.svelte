@@ -5,14 +5,51 @@
   import { settings } from "../../stores/settings.svelte";
   import { formatColor, rgbToHex } from "../../analysis/convert";
   import { listBuiltinPalettes } from "../../palettes/builtin";
-  import { matchAllPalettes } from "../../palettes/match";
-  import type { PaletteMatch } from "../../palettes/schema";
+  import { matchAllPalettes, perfectMatchIndices } from "../../palettes/match";
+  import type { Palette, PaletteMatch } from "../../palettes/schema";
 
-  const palettes = listBuiltinPalettes();
+  const builtin = listBuiltinPalettes();
+
+  const ownPalettes = $derived.by<Palette[]>(() => {
+    const list: Palette[] = [];
+    if (analysis.colors.length > 0) {
+      list.push({
+        id: "own-reduced",
+        name: `Bild-Palette reduziert (${analysis.colors.length})`,
+        colors: analysis.colors.map((c) => c.rgb),
+        description: "Aus der Häufigste-Analyse erzeugt",
+      });
+    }
+    if (analysis.rareColors.length > 0) {
+      list.push({
+        id: "own-full",
+        name: `Bild-Palette voll (${analysis.rareColors.length})`,
+        colors: analysis.rareColors.map((c) => c.rgb),
+        description: "Aus der Seltenste-Analyse erzeugt",
+      });
+    }
+    return list;
+  });
+
+  const allPalettes = $derived([...ownPalettes, ...builtin]);
 
   const matches = $derived.by<PaletteMatch[]>(() => {
     if (analysis.colors.length === 0) return [];
-    return matchAllPalettes(analysis.colors, palettes);
+    return matchAllPalettes(analysis.colors, allPalettes);
+  });
+
+  function isOwn(id: string): boolean {
+    return id.startsWith("own-");
+  }
+
+  const perfectByPalette = $derived.by<Map<string, Set<number>>>(() => {
+    const map = new Map<string, Set<number>>();
+    if (analysis.colors.length === 0) return map;
+    for (const pal of allPalettes) {
+      if (isOwn(pal.id)) continue;
+      map.set(pal.id, perfectMatchIndices(pal, analysis.colors));
+    }
+    return map;
   });
 
   let flash = $state<string | null>(null);
@@ -64,7 +101,7 @@
 {:else}
   <div class="head">
     <h3>Paletten-Vergleich</h3>
-    <span class="count">{palettes.length} Paletten</span>
+    <span class="count">{allPalettes.length} Paletten</span>
   </div>
 
   <p class="lead">
@@ -75,13 +112,19 @@
 
   <ul class="matches">
     {#each matches as m, i (m.palette.id)}
-      <li>
+      <li class:own={isOwn(m.palette.id)}>
         <div class="rank-row">
           <span class="rank">{(i + 1).toString().padStart(2, "0")}</span>
           <div class="name">
             <b>{m.palette.name}</b>
+            {#if isOwn(m.palette.id)}
+              <span class="badge-own">Eigen</span>
+            {/if}
             {#if m.palette.author}
               <span class="author">{m.palette.author}</span>
+            {/if}
+            {#if m.palette.description}
+              <span class="author">{m.palette.description}</span>
             {/if}
           </div>
           <div class="score">
@@ -95,12 +138,19 @@
             <button
               type="button"
               class="swatch-btn"
+              class:matched={perfectByPalette.get(m.palette.id)?.has(ci)}
               style="background: {rgbToHex(rgb)};"
               title={rgbToHex(rgb)}
               onclick={() => copySwatch(rgb)}
             ></button>
           {/each}
         </div>
+        {#if !isOwn(m.palette.id) && perfectByPalette.get(m.palette.id) && (perfectByPalette.get(m.palette.id)?.size ?? 0) > 0}
+          <div class="match-info">
+            <Icon name="check" size={10} />
+            <b>{perfectByPalette.get(m.palette.id)?.size}</b> Treffer mit Bildfarben
+          </div>
+        {/if}
 
         <div class="meta">
           <span>Abdeckung: <b>{(m.coverage * 100).toFixed(0)} %</b></span>
@@ -185,6 +235,23 @@
     gap: 8px;
     background: var(--surface-2);
   }
+  .matches li.own {
+    border-color: var(--accent-line);
+    background: var(--accent-soft);
+  }
+  .badge-own {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--bg);
+    background: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    vertical-align: middle;
+  }
 
   .rank-row {
     display: grid;
@@ -243,11 +310,29 @@
     border: 1px solid var(--border-strong);
     padding: 0;
     cursor: pointer;
-    transition: transform 0.08s;
+    transition: transform 0.08s, box-shadow 0.12s;
+    position: relative;
   }
   .swatch-btn:hover {
     transform: scale(1.15);
     z-index: 1;
+  }
+  .swatch-btn.matched {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent);
+    z-index: 1;
+  }
+  .match-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent);
+    align-self: flex-start;
+  }
+  .match-info b {
+    font-weight: 700;
   }
 
   .meta {

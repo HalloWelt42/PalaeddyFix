@@ -1,8 +1,9 @@
-import { nearestPaletteColor } from "../analysis/distance";
+import { deltaE2000, nearestPaletteColor } from "../analysis/distance";
 import type { PaletteColor } from "../storage/schema";
 import type { Palette, PaletteMatch } from "./schema";
 
 const EXCELLENT_DE = 4;
+const PERFECT_DE = 2;
 
 export function matchPalette(
   imageColors: PaletteColor[],
@@ -51,4 +52,21 @@ export function matchAllPalettes(
   return palettes
     .map((p) => matchPalette(imageColors, p))
     .sort((a, b) => a.weightedDistance - b.weightedDistance);
+}
+
+export function perfectMatchIndices(
+  palette: Palette,
+  imageColors: PaletteColor[],
+): Set<number> {
+  const indices = new Set<number>();
+  for (let i = 0; i < palette.colors.length; i++) {
+    const pc = palette.colors[i];
+    for (const c of imageColors) {
+      if (deltaE2000(pc, c.rgb) <= PERFECT_DE) {
+        indices.add(i);
+        break;
+      }
+    }
+  }
+  return indices;
 }
