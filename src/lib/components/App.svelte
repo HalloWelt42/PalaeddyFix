@@ -85,10 +85,12 @@
 
 <div class="app">
   <Header onOpenPicker={openPicker} />
-  <div class="content">
+  <div class="content" class:panel-closed={!ui.panelOpen}>
     <RailLeft />
     <Main />
-    <Panel />
+    {#if ui.panelOpen}
+      <Panel />
+    {/if}
     <RailRight />
   </div>
   <Footer />
@@ -121,5 +123,11 @@
       calc((100% - 2 * var(--w-rail)) * 0.382)
       var(--w-rail);
     min-height: 0;
+  }
+  .content.panel-closed {
+    grid-template-columns:
+      var(--w-rail)
+      1fr
+      var(--w-rail);
   }
 </style>

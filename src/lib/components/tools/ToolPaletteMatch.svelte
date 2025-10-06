@@ -42,15 +42,26 @@
     return id.startsWith("own-");
   }
 
+  let matchThreshold = $state<number>(2);
+
   const perfectByPalette = $derived.by<Map<string, Set<number>>>(() => {
     const map = new Map<string, Set<number>>();
     if (analysis.colors.length === 0) return map;
     for (const pal of allPalettes) {
       if (isOwn(pal.id)) continue;
-      map.set(pal.id, perfectMatchIndices(pal, analysis.colors));
+      map.set(pal.id, perfectMatchIndices(pal, analysis.colors, matchThreshold));
     }
     return map;
   });
+
+  function thresholdLabel(t: number): string {
+    if (t < 0.5) return "Bitgenau";
+    if (t < 1.5) return "Praktisch identisch";
+    if (t < 3) return "Kaum unterscheidbar";
+    if (t < 5) return "Dicht dran";
+    if (t < 8) return "Weit";
+    return "Sehr weit";
+  }
 
   let flash = $state<string | null>(null);
   let flashTimer: ReturnType<typeof setTimeout> | null = null;
@@ -99,16 +110,41 @@
     </p>
   </div>
 {:else}
-  <div class="head">
-    <h3>Paletten-Vergleich</h3>
-    <span class="count">{allPalettes.length} Paletten</span>
-  </div>
+  <div class="sticky-top">
+    <div class="head">
+      <h3>Paletten-Vergleich</h3>
+      <span class="count">{allPalettes.length} Paletten</span>
+    </div>
 
-  <p class="lead">
-    Jede Bildfarbe wird ihrer nächsten Paletten-Farbe zugeordnet, gewichtet nach
-    Anteil. Als Distanz dient
-    <InfoLink topic="cie2000">Delta E (CIE2000)</InfoLink>.
-  </p>
+    <p class="lead">
+      Jede Bildfarbe wird ihrer nächsten Paletten-Farbe zugeordnet, gewichtet nach
+      Anteil. Als Distanz dient
+      <InfoLink topic="cie2000">Delta E (CIE2000)</InfoLink>.
+    </p>
+
+    <div class="threshold">
+      <div class="th-head">
+        <label for="th-range" class="th-label">Treffer-Schwelle</label>
+        <span class="th-val">
+          ΔE <b>{matchThreshold.toFixed(1)}</b>
+          · {thresholdLabel(matchThreshold)}
+        </span>
+      </div>
+      <input
+        id="th-range"
+        type="range"
+        min="0"
+        max="10"
+        step="0.1"
+        bind:value={matchThreshold}
+      />
+      <div class="th-axis">
+        <span>bitgenau</span>
+        <span>kaum unterscheidbar</span>
+        <span>weit</span>
+      </div>
+    </div>
+  </div>
 
   <ul class="matches">
     {#each matches as m, i (m.palette.id)}
@@ -189,6 +225,16 @@
     color: var(--text-mute);
   }
 
+  .sticky-top {
+    position: sticky;
+    top: -14px;
+    z-index: 5;
+    background: var(--surface);
+    margin: -14px -14px 12px;
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid var(--border-strong);
+  }
+
   .head {
     display: flex;
     align-items: center;
@@ -217,6 +263,49 @@
     color: var(--text-dim);
     line-height: 1.5;
     margin-bottom: 12px;
+  }
+
+  .threshold {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .th-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .th-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+  }
+  .th-val {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .th-val b {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .threshold input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+  .th-axis {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .matches {

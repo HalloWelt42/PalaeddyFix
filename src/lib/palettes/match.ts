@@ -57,12 +57,13 @@ export function matchAllPalettes(
 export function perfectMatchIndices(
   palette: Palette,
   imageColors: PaletteColor[],
+  threshold: number = PERFECT_DE,
 ): Set<number> {
   const indices = new Set<number>();
   for (let i = 0; i < palette.colors.length; i++) {
     const pc = palette.colors[i];
     for (const c of imageColors) {
-      if (deltaE2000(pc, c.rgb) <= PERFECT_DE) {
+      if (deltaE2000(pc, c.rgb) <= threshold) {
         indices.add(i);
         break;
       }
