@@ -14,18 +14,21 @@
 
   const top: RailItem[] = [
     { key: "gallery", name: "grid", title: "Galerie", badge: () => String(gallery.items.length) },
+    { key: "palettes", name: "palette", title: "Paletten" },
+    { key: "contrast", name: "contrast", title: "Kontrastmatrix" },
   ];
 </script>
 
 <aside class="rail left">
   <div class="group">
     {#each top as item (item.key)}
+      {@const open = ui.activeLeft === item.key}
       <button
         class="rail-btn"
-        class:active={ui.activeLeft === item.key}
-        title={item.title}
+        class:active={open}
+        title={open ? `${item.title} schließen` : item.title}
         type="button"
-        onclick={() => ui.setLeft(item.key)}
+        onclick={() => ui.toggleLeft(item.key)}
       >
         <Icon name={item.name} size={18} />
         {#if item.badge && item.badge() && Number(item.badge()) > 0}<span class="badge">{item.badge()}</span>{/if}

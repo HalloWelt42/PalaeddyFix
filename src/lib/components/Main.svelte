@@ -2,6 +2,7 @@
   import Icon from "./ui/Icon.svelte";
   import Gallery from "./Gallery.svelte";
   import Viewer from "./Viewer.svelte";
+  import PaletteGallery from "./PaletteGallery.svelte";
   import ContrastMatrixBig from "./ContrastMatrixBig.svelte";
   import { dropzone } from "../import/dropzone";
   import { ingestFiles } from "../import/fileIntake";
@@ -48,12 +49,17 @@
   }
 </script>
 
-<main
-  class="main"
-  class:with-matrix={ui.contrastMatrixFull && analysis.colors.length > 0}
-  use:dropzone={{ onFiles: handleFiles }}
->
-  {#if selection.id}
+<main class="main" use:dropzone={{ onFiles: handleFiles }}>
+  {#if ui.activeLeft === "palettes"}
+    <PaletteGallery />
+  {:else if ui.activeLeft === "contrast"}
+    <ContrastMatrixBig />
+  {:else if ui.activeLeft === null}
+    <div class="main-empty">
+      <Icon name="droplet" size={48} />
+      <p>Keine Ansicht aktiv. Wähle links eine Ansicht.</p>
+    </div>
+  {:else if selection.id}
     <Viewer />
   {:else}
     <div class="toolbar">
@@ -103,10 +109,6 @@
     </div>
   {/if}
 
-  {#if ui.contrastMatrixFull && analysis.colors.length > 0}
-    <ContrastMatrixBig />
-  {/if}
-
   <input
     bind:this={fileInput}
     type="file"
@@ -126,14 +128,20 @@
     min-height: 0;
     position: relative;
   }
-  .main.with-matrix {
-    display: grid;
-    grid-template-rows: minmax(0, 1fr) minmax(0, 50%);
-    overflow: hidden;
+  .main-empty {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    color: var(--text-mute);
+    padding: 40px;
+    text-align: center;
   }
-  .main.with-matrix > :global(*) {
-    min-height: 0;
-    min-width: 0;
+  .main-empty p {
+    font-family: var(--font-button);
+    font-size: 14px;
   }
   .main:global(.is-drag-hover)::after {
     content: "";

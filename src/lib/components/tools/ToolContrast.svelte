@@ -73,15 +73,6 @@
       />
       <span class="n">{shown.length}</span>
     </div>
-    <button
-      type="button"
-      class="toggle-big"
-      class:on={ui.contrastMatrixFull}
-      onclick={() => ui.toggleContrastMatrixFull()}
-    >
-      <Icon name={ui.contrastMatrixFull ? "x" : "contrast"} size={12} />
-      {ui.contrastMatrixFull ? "Große Matrix ausblenden" : "Große Matrix links einblenden"}
-    </button>
   </div>
 
   <section class="section">
@@ -111,9 +102,9 @@
     </div>
   </section>
 
-  {#if !ui.contrastMatrixFull}
   <section class="section">
-    <h3>Kontrastmatrix</h3>
+    <h3>Kontrastmatrix (kompakt)</h3>
+    <p class="hint-inline">Grosse Matrix-Ansicht: Kontrastmatrix-Tab in der linken Leiste.</p>
     <div class="matrix-wrap">
       <table class="matrix">
         <thead>
@@ -143,7 +134,6 @@
       </table>
     </div>
   </section>
-  {/if}
 
   <section class="section">
     <h3>Beste Paare</h3>
@@ -233,31 +223,11 @@
     align-items: center;
   }
 
-  .toggle-big {
-    margin-top: 10px;
-    width: 100%;
-    background: var(--surface-2);
-    border: 1px solid var(--border-strong);
-    color: var(--text);
-    padding: 6px 10px;
+  .hint-inline {
     font-family: var(--font-button);
     font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-    cursor: pointer;
-    border-radius: 3px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-  }
-  .toggle-big:hover {
-    border-color: var(--text);
-  }
-  .toggle-big.on {
-    background: var(--accent-soft);
-    border-color: var(--accent-line);
-    color: var(--text);
+    color: var(--text-mute);
+    margin: 4px 0 8px;
   }
   .control .k {
     font-family: var(--font-mono);

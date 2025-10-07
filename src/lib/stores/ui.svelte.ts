@@ -1,9 +1,9 @@
 export type ToolKey = "analysis" | "palette" | "snap" | "contrast" | "export";
-export type LeftTab = "gallery" | "import" | "favorites" | "tags" | "folders" | "trash" | "settings";
+export type LeftTab = "gallery" | "palettes" | "contrast";
 
 class UIStore {
   activeTool = $state<ToolKey>("analysis");
-  activeLeft = $state<LeftTab>("gallery");
+  activeLeft = $state<LeftTab | null>("gallery");
   panelOpen = $state<boolean>(true);
   settingsOpen = $state<boolean>(false);
   contrastMatrixFull = $state<boolean>(false);
@@ -18,8 +18,12 @@ class UIStore {
     this.contrastMatrixFull = !this.contrastMatrixFull;
   }
 
-  setLeft(tab: LeftTab): void {
+  setLeft(tab: LeftTab | null): void {
     this.activeLeft = tab;
+  }
+
+  toggleLeft(tab: LeftTab): void {
+    this.activeLeft = this.activeLeft === tab ? null : tab;
   }
 
   togglePanel(): void {

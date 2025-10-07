@@ -44,7 +44,7 @@
         type="button"
         class="close"
         title="Matrix ausblenden"
-        onclick={() => (ui.contrastMatrixFull = false)}
+        onclick={() => ui.setLeft("gallery")}
       >
         <Icon name="x" size={14} />
       </button>
