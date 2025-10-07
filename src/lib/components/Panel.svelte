@@ -4,12 +4,14 @@
   import ToolExport from "./tools/ToolExport.svelte";
   import ToolPaletteMatch from "./tools/ToolPaletteMatch.svelte";
   import ToolSnap from "./tools/ToolSnap.svelte";
+  import ToolContrast from "./tools/ToolContrast.svelte";
   import { ui } from "../stores/ui.svelte";
 
   const titles = {
     analysis: "Farbanalyse",
     palette: "Paletten-Matcher",
     snap: "Snap-to-Palette",
+    contrast: "WCAG-Kontrast",
     export: "Export",
   } as const;
 </script>
@@ -30,6 +32,8 @@
       <ToolPaletteMatch />
     {:else if ui.activeTool === "snap"}
       <ToolSnap />
+    {:else if ui.activeTool === "contrast"}
+      <ToolContrast />
     {:else if ui.activeTool === "export"}
       <ToolExport />
     {/if}

@@ -15,6 +15,7 @@
     { key: "analysis", name: "droplet", title: "Farbanalyse" },
     { key: "palette", name: "palette", title: "Paletten-Matcher" },
     { key: "snap", name: "magic", title: "Snap-to-Palette" },
+    { key: "contrast", name: "contrast", title: "WCAG-Kontrast" },
     { key: "export", name: "download", title: "Export" },
   ];
 </script>

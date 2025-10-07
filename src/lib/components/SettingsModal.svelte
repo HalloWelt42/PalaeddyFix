@@ -1,6 +1,7 @@
 <script lang="ts">
   import Icon from "./ui/Icon.svelte";
   import Segmented from "./ui/Segmented.svelte";
+  import InfoLink from "./ui/InfoLink.svelte";
   import { ui } from "../stores/ui.svelte";
   import { settings } from "../stores/settings.svelte";
   import { gallery } from "../stores/gallery.svelte";
@@ -89,7 +90,10 @@
           <div class="row">
             <div class="label">
               <div class="name">Transparenz</div>
-              <div class="hint">Wie werden Alpha-Werte im Bild behandelt?</div>
+              <div class="hint">
+                Wie werden <InfoLink topic="alpha">Alpha-Werte</InfoLink> im
+                Bild behandelt?
+              </div>
             </div>
             <Segmented
               options={alphaOptions}
@@ -99,7 +103,9 @@
           </div>
           <div class="row">
             <div class="label">
-              <div class="name">Downscale-Grenze</div>
+              <div class="name">
+                <InfoLink topic="downscale">Downscale</InfoLink>-Grenze
+              </div>
               <div class="hint">Max. Kantenlänge vor der Analyse (Pixel)</div>
             </div>
             <input
@@ -147,7 +153,10 @@
           <div class="row">
             <div class="label">
               <div class="name">Alle Bilder löschen</div>
-              <div class="hint">Löscht Bilder und gecachte Analysen aus IndexedDB</div>
+              <div class="hint">
+                Löscht Bilder und gecachte Analysen aus der
+                <InfoLink topic="indexeddb">IndexedDB</InfoLink>
+              </div>
             </div>
             <button
               type="button"

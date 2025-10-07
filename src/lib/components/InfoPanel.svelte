@@ -290,7 +290,7 @@
     font-weight: 500;
     color: var(--text-dim);
   }
-  .drag-title :global(svg) {
+  .drag-title :global(.ic) {
     color: var(--info);
   }
 

@@ -1,4 +1,4 @@
-export type ToolKey = "analysis" | "palette" | "snap" | "export";
+export type ToolKey = "analysis" | "palette" | "snap" | "contrast" | "export";
 export type LeftTab = "gallery" | "import" | "favorites" | "tags" | "folders" | "trash" | "settings";
 
 class UIStore {

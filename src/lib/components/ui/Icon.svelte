@@ -18,7 +18,8 @@
     | "check"
     | "copy"
     | "speaker"
-    | "stop";
+    | "stop"
+    | "contrast";
 
   const MAP: Record<IconName, string> = {
     grid: "table-cells-large",
@@ -40,6 +41,7 @@
     copy: "copy",
     speaker: "volume-high",
     stop: "stop",
+    contrast: "circle-half-stroke",
   };
 </script>
 
