@@ -51,25 +51,27 @@
     <p class="sub">Kontraste brauchen eine Farbpalette aus dem Häufigste-Tab.</p>
   </div>
 {:else}
-  <p class="intro">
-    Prüft das
-    <InfoLink topic="kontrastratio">Kontrastverhältnis</InfoLink>
-    zwischen Bildfarben auf Basis der
-    <InfoLink topic="luminanz">relativen Luminanz</InfoLink>
-    und bewertet nach
-    <InfoLink topic="wcag">WCAG 2.1</InfoLink>.
-  </p>
-  <div class="control">
-    <label class="k" for="mc">Farben</label>
-    <input
-      id="mc"
-      type="range"
-      min="2"
-      max="24"
-      step="1"
-      bind:value={maxCount}
-    />
-    <span class="n">{shown.length}</span>
+  <div class="sticky-top">
+    <p class="intro">
+      Prüft das
+      <InfoLink topic="kontrastratio">Kontrastverhältnis</InfoLink>
+      zwischen Bildfarben auf Basis der
+      <InfoLink topic="luminanz">relativen Luminanz</InfoLink>
+      und bewertet nach
+      <InfoLink topic="wcag">WCAG 2.1</InfoLink>.
+    </p>
+    <div class="control">
+      <label class="k" for="mc">Farben</label>
+      <input
+        id="mc"
+        type="range"
+        min="2"
+        max="24"
+        step="1"
+        bind:value={maxCount}
+      />
+      <span class="n">{shown.length}</span>
+    </div>
   </div>
 
   <section class="section">
@@ -151,7 +153,7 @@
     </ul>
   </section>
 
-  <section class="section legend-panel">
+  <section class="section legend-panel sticky-bottom">
     <h3>Stufen nach WCAG 2.1</h3>
     <ul class="stufen">
       <li><span class="level lvl-aaa">AAA</span> <b>≥ 7:1</b> Normal-Text, hoechste Stufe</li>
@@ -184,6 +186,25 @@
     color: var(--text-mute);
   }
 
+  .sticky-top {
+    position: sticky;
+    top: -14px;
+    z-index: 5;
+    background: var(--surface);
+    margin: -14px -14px 12px;
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid var(--border-strong);
+  }
+  .sticky-bottom {
+    position: sticky;
+    bottom: -14px;
+    z-index: 5;
+    background: var(--surface);
+    margin: 16px -14px -14px;
+    padding: 10px 14px 14px;
+    border-top: 1px solid var(--border-strong);
+  }
+
   .intro {
     font-family: var(--font-button);
     font-size: 12px;
@@ -198,7 +219,6 @@
     grid-template-columns: 60px 1fr 40px;
     gap: 10px;
     align-items: center;
-    margin-bottom: 14px;
   }
   .control .k {
     font-family: var(--font-mono);
