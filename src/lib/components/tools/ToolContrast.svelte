@@ -106,7 +106,7 @@
         <thead>
           <tr>
             <th class="corner"></th>
-            {#each shown as c (c.hex + "-col")}
+            {#each shown as c, ci (ci)}
               <th class="head-sw"><span class="msw" style="background: {c.hex};"></span></th>
             {/each}
           </tr>
