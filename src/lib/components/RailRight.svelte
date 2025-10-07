@@ -23,12 +23,13 @@
 <aside class="rail right">
   <div class="group">
     {#each top as item (item.key)}
+      {@const open = ui.activeTool === item.key && ui.panelOpen}
       <button
         class="rail-btn"
-        class:active={ui.activeTool === item.key}
-        title={item.title}
+        class:active={open}
+        title={open ? `${item.title} schließen` : item.title}
         type="button"
-        onclick={() => ui.setTool(item.key)}
+        onclick={() => (open ? (ui.panelOpen = false) : ui.setTool(item.key))}
       >
         <Icon name={item.name} size={18} />
       </button>

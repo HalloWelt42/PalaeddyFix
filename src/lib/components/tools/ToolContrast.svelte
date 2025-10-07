@@ -2,6 +2,7 @@
   import Icon from "../ui/Icon.svelte";
   import InfoLink from "../ui/InfoLink.svelte";
   import { analysis } from "../../stores/analysis.svelte";
+  import { ui } from "../../stores/ui.svelte";
   import { isLight, rgbToHex } from "../../analysis/convert";
   import {
     contrastRatio,
@@ -72,6 +73,15 @@
       />
       <span class="n">{shown.length}</span>
     </div>
+    <button
+      type="button"
+      class="toggle-big"
+      class:on={ui.contrastMatrixFull}
+      onclick={() => ui.toggleContrastMatrixFull()}
+    >
+      <Icon name={ui.contrastMatrixFull ? "x" : "contrast"} size={12} />
+      {ui.contrastMatrixFull ? "Große Matrix ausblenden" : "Große Matrix links einblenden"}
+    </button>
   </div>
 
   <section class="section">
@@ -101,6 +111,7 @@
     </div>
   </section>
 
+  {#if !ui.contrastMatrixFull}
   <section class="section">
     <h3>Kontrastmatrix</h3>
     <div class="matrix-wrap">
@@ -132,6 +143,7 @@
       </table>
     </div>
   </section>
+  {/if}
 
   <section class="section">
     <h3>Beste Paare</h3>
@@ -219,6 +231,33 @@
     grid-template-columns: 60px 1fr 40px;
     gap: 10px;
     align-items: center;
+  }
+
+  .toggle-big {
+    margin-top: 10px;
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    padding: 6px 10px;
+    font-family: var(--font-button);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .toggle-big:hover {
+    border-color: var(--text);
+  }
+  .toggle-big.on {
+    background: var(--accent-soft);
+    border-color: var(--accent-line);
+    color: var(--text);
   }
   .control .k {
     font-family: var(--font-mono);

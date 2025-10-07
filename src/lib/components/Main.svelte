@@ -2,10 +2,13 @@
   import Icon from "./ui/Icon.svelte";
   import Gallery from "./Gallery.svelte";
   import Viewer from "./Viewer.svelte";
+  import ContrastMatrixBig from "./ContrastMatrixBig.svelte";
   import { dropzone } from "../import/dropzone";
   import { ingestFiles } from "../import/fileIntake";
   import { gallery } from "../stores/gallery.svelte";
   import { selection } from "../stores/selection.svelte";
+  import { ui } from "../stores/ui.svelte";
+  import { analysis } from "../stores/analysis.svelte";
 
   let fileInput = $state<HTMLInputElement | null>(null);
   let importing = $state<boolean>(false);
@@ -45,7 +48,11 @@
   }
 </script>
 
-<main class="main" use:dropzone={{ onFiles: handleFiles }}>
+<main
+  class="main"
+  class:with-matrix={ui.contrastMatrixFull && analysis.colors.length > 0}
+  use:dropzone={{ onFiles: handleFiles }}
+>
   {#if selection.id}
     <Viewer />
   {:else}
@@ -96,6 +103,10 @@
     </div>
   {/if}
 
+  {#if ui.contrastMatrixFull && analysis.colors.length > 0}
+    <ContrastMatrixBig />
+  {/if}
+
   <input
     bind:this={fileInput}
     type="file"
@@ -114,6 +125,15 @@
     min-width: 0;
     min-height: 0;
     position: relative;
+  }
+  .main.with-matrix {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 50%);
+    overflow: hidden;
+  }
+  .main.with-matrix > :global(*) {
+    min-height: 0;
+    min-width: 0;
   }
   .main:global(.is-drag-hover)::after {
     content: "";
