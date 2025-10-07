@@ -14,12 +14,22 @@
 
   const primary = $derived(selection.id && currentItem ? "Detail" : "Galerie");
   const secondary = $derived(currentItem ? currentItem.name : "---");
+
+  const brand = "PaläddyFix";
+  const brandChars: string[] = Array.from(brand);
+  const hueStep = 360 / brandChars.length;
 </script>
 
 <header class="header">
   <div class="logo">
-    <div class="logo-mark">P</div>
-    <div class="logo-name">Pal<span>ä</span>ddyFix</div>
+    <span class="logo-mark">
+      <Icon name="palette" size={27} />
+    </span>
+    <div class="logo-name" aria-label={brand}>
+      {#each brandChars as ch, i (i)}
+        <span style="color: oklch(0.72 0.19 {(i * hueStep).toFixed(1)});">{ch}</span>
+      {/each}
+    </div>
   </div>
   <div class="header-center">
     <div class="crumbs">
@@ -65,21 +75,18 @@
     font-size: 15px;
   }
   .logo-mark {
-    width: 22px;
-    height: 22px;
-    background: var(--text);
-    color: var(--bg);
-    display: grid;
+    display: inline-grid;
     place-items: center;
-    font-weight: 800;
-    font-size: 12px;
-    font-family: var(--font-mono);
+    color: #b8a864;
+    line-height: 1;
   }
   .logo-name {
     color: var(--text);
+    display: inline-flex;
+    font-variant-numeric: tabular-nums;
   }
   .logo-name span {
-    color: var(--text-dim);
+    display: inline-block;
   }
   .header-center {
     display: flex;
