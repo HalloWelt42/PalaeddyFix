@@ -5,6 +5,12 @@
   import "prismjs/components/prism-javascript";
   import "prismjs/components/prism-markup";
   import "prismjs/components/prism-bash";
+  import "prismjs/components/prism-scss";
+  import "prismjs/components/prism-less";
+  import "prismjs/components/prism-swift";
+  import "prismjs/components/prism-kotlin";
+  import "prismjs/components/prism-dart";
+  import "prismjs/components/prism-python";
 
   export type CodeLang =
     | "css"
@@ -12,6 +18,12 @@
     | "javascript"
     | "markup"
     | "bash"
+    | "scss"
+    | "less"
+    | "swift"
+    | "kotlin"
+    | "dart"
+    | "python"
     | "plain";
 
   type Props = {

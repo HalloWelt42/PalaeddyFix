@@ -1,11 +1,11 @@
 <script lang="ts">
   import Icon from "../ui/Icon.svelte";
   import CodeBlock from "../ui/CodeBlock.svelte";
-  import Segmented from "../ui/Segmented.svelte";
   import { analysis } from "../../stores/analysis.svelte";
   import {
     downloadOutput,
     runExport,
+    EXPORT_DESCRIPTORS,
     type ExportFormat,
   } from "../../export/formats";
 
@@ -17,12 +17,19 @@
     analysis.colors.length > 0 ? runExport(format, analysis.colors) : null,
   );
 
-  const formatOptions: { value: ExportFormat; label: string }[] = [
-    { value: "hex", label: "HEX" },
-    { value: "css", label: "CSS" },
-    { value: "tailwind", label: "Tailwind" },
-    { value: "json", label: "JSON" },
-  ];
+  const grouped = $derived.by(() => {
+    const map = new Map<string, typeof EXPORT_DESCRIPTORS>();
+    for (const d of EXPORT_DESCRIPTORS) {
+      const list = map.get(d.categoryLabel) ?? [];
+      list.push(d);
+      map.set(d.categoryLabel, list);
+    }
+    return Array.from(map.entries());
+  });
+
+  const activeDescriptor = $derived(
+    EXPORT_DESCRIPTORS.find((d) => d.id === format),
+  );
 
   async function copyAll(): Promise<void> {
     if (!output) return;
@@ -54,23 +61,33 @@
     <p class="sub">Führe erst eine Analyse durch.</p>
   </div>
 {:else}
-  <div class="section">
-    <h3>Format</h3>
-    <Segmented options={formatOptions} value={format} onchange={(v) => (format = v)} />
+  <div class="control">
+    <label class="k" for="fmt">Format</label>
+    <select id="fmt" bind:value={format}>
+      {#each grouped as [cat, items] (cat)}
+        <optgroup label={cat}>
+          {#each items as d (d.id)}
+            <option value={d.id}>{d.label}</option>
+          {/each}
+        </optgroup>
+      {/each}
+    </select>
   </div>
 
   {#if output}
     <div class="section">
       <div class="between">
-        <h3 class="no-border">Vorschau</h3>
         <span class="file">{output.filename}</span>
+        {#if activeDescriptor}
+          <span class="cat">{activeDescriptor.categoryLabel}</span>
+        {/if}
       </div>
       <CodeBlock code={output.content} lang={output.lang} filename={output.filename} />
     </div>
 
     <div class="actions">
       <button type="button" class="btn" onclick={copyAll}>
-        <Icon name="check" size={12} /> Kopieren
+        <Icon name="copy" size={12} /> Kopieren
       </button>
       <button type="button" class="btn btn-primary" onclick={download}>
         <Icon name="download" size={12} /> Herunterladen
@@ -106,38 +123,56 @@
     color: var(--text-mute);
   }
 
+  .control {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .k {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  select {
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    padding: 6px 8px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    border-radius: 3px;
+    outline: none;
+    width: 100%;
+  }
+  select:focus {
+    border-color: var(--accent-line);
+  }
+
   .section {
-    margin-bottom: 18px;
-  }
-  .section h3 {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--text-mute);
-    margin-bottom: 8px;
-    font-weight: 600;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--border);
-  }
-  .section h3.no-border {
-    padding-bottom: 0;
-    border-bottom: 0;
-    margin-bottom: 0;
+    margin-bottom: 12px;
   }
   .between {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 8px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--border);
   }
   .file {
     font-family: var(--font-mono);
     font-size: 10px;
-    color: var(--text-dim);
-    text-transform: lowercase;
+    color: var(--text);
     letter-spacing: 0.5px;
+  }
+  .cat {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 1px 6px;
+    border: 1px solid var(--border-strong);
   }
 
   .actions {
