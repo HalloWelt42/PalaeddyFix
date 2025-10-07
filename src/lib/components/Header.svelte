@@ -23,8 +23,8 @@
     "oklch(0.78 0.2 65)",    // a -- heller Orange
     "oklch(0.88 0.2 100)",   // l -- Gelb
     "oklch(0.62 0.26 137)",  // ä -- Grün
-    "oklch(0.62 0.26 245)",  // d -- Blau wie altes y
-    "oklch(0.62 0.26 191)",  // d -- gemittelt zwischen ä und d
+    "oklch(0.62 0.26 191)",  // d -- Türkis, gemittelt zwischen ä und d2
+    "oklch(0.62 0.26 245)",  // d -- Blau
     "oklch(0.42 0.22 265)",  // y -- Dunkelblau
     "oklch(0.62 0.26 295)",  // F -- Violett
     "oklch(0.62 0.26 325)",  // i -- Magenta
@@ -96,6 +96,9 @@
     color: var(--text);
     display: inline-flex;
     font-variant-numeric: tabular-nums;
+    font-size: 30px;
+    line-height: 1;
+    letter-spacing: 0;
   }
   .logo-name span {
     display: inline-block;
