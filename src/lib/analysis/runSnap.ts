@@ -56,6 +56,9 @@ export type SnapOutcome = {
 
 export function runSnap(params: SnapParams): Promise<SnapOutcome> {
   const id = nextId++;
+  const paletteCopy: RGB[] = params.palette.map(
+    (rgb): RGB => [rgb[0], rgb[1], rgb[2]],
+  );
   return new Promise<SnapOutcome>((resolve, reject) => {
     pending.set(id, { resolve, reject, onProgress: params.onProgress });
     const req: SnapRequest = {
@@ -63,7 +66,7 @@ export function runSnap(params: SnapParams): Promise<SnapOutcome> {
       type: "snap",
       payload: {
         blob: params.blob,
-        palette: params.palette,
+        palette: paletteCopy,
         dither: params.dither,
         maxEdge: params.maxEdge,
       },
