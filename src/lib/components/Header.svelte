@@ -18,6 +18,7 @@
   const brand = "PaläddyFix";
   const brandChars: string[] = Array.from(brand);
   const hueStep = 360 / brandChars.length;
+  const hueStart = 29;
 </script>
 
 <header class="header">
@@ -27,7 +28,11 @@
     </span>
     <div class="logo-name" aria-label={brand}>
       {#each brandChars as ch, i (i)}
-        <span style="color: oklch(0.72 0.19 {(i * hueStep).toFixed(1)});">{ch}</span>
+        {#if ch === "l"}
+          <span style="color: oklch(0.88 0.2 100);">{ch}</span>
+        {:else}
+          <span style="color: oklch(0.62 0.26 {((i * hueStep + hueStart) % 360).toFixed(1)});">{ch}</span>
+        {/if}
       {/each}
     </div>
   </div>
