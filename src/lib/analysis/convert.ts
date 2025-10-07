@@ -1,4 +1,5 @@
 export type RGB = [number, number, number];
+export type RGBA = [number, number, number, number];
 export type HSL = [number, number, number];
 export type OKLCH = [number, number, number];
 export type OKLab = [number, number, number];
@@ -102,4 +103,45 @@ export function isLight(rgb: RGB): boolean {
   const [r, g, b] = rgb;
   const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   return lum > 140;
+}
+
+export function rgbaToHex8([r, g, b, a]: RGBA): string {
+  const h = (n: number): string => Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0");
+  return `#${h(r)}${h(g)}${h(b)}${h(a)}`;
+}
+
+export function formatRgba([r, g, b, a]: RGBA): string {
+  const alpha = (a / 255).toFixed(3).replace(/\.?0+$/, "") || "0";
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+export function formatHsla(rgb: RGB, alpha: number): string {
+  const [h, s, l] = rgbToHsl(rgb);
+  const a = (alpha / 255).toFixed(3).replace(/\.?0+$/, "") || "0";
+  return `hsla(${h}, ${s}%, ${l}%, ${a})`;
+}
+
+export function formatOklchA(rgb: RGB, alpha: number): string {
+  const [L, C, H] = rgbToOklch(rgb);
+  const a = (alpha / 255).toFixed(3).replace(/\.?0+$/, "") || "0";
+  return `oklch(${L.toFixed(3)} ${C.toFixed(3)} ${H.toFixed(1)} / ${a})`;
+}
+
+export function hasAlpha(a: number | undefined): boolean {
+  return typeof a === "number" && a < 255;
+}
+
+export function formatColorA(rgb: RGB, alpha: number, fmt: CopyFormat): string {
+  if (!hasAlpha(alpha)) return formatColor(rgb, fmt);
+  const rgba: RGBA = [rgb[0], rgb[1], rgb[2], alpha];
+  switch (fmt) {
+    case "hex":
+      return rgbaToHex8(rgba);
+    case "rgb":
+      return formatRgba(rgba);
+    case "hsl":
+      return formatHsla(rgb, alpha);
+    case "oklch":
+      return formatOklchA(rgb, alpha);
+  }
 }

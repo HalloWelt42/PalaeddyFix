@@ -238,7 +238,7 @@
     display: grid;
     grid-template-rows: 44px 1fr;
     box-shadow: 0 20px 56px #0008;
-    z-index: 80;
+    z-index: 200;
     user-select: none;
     min-width: 280px;
     min-height: 44px;

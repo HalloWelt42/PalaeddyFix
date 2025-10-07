@@ -3,12 +3,13 @@
   import { selection } from "../stores/selection.svelte";
   import { gallery } from "../stores/gallery.svelte";
   import { settings } from "../stores/settings.svelte";
-  import { formatColor, rgbToHex } from "../analysis/convert";
+  import { formatColor, formatColorA, hasAlpha, rgbToHex } from "../analysis/convert";
   import type { RGB } from "../analysis/convert";
 
   let canvasEl = $state<HTMLCanvasElement | null>(null);
   let wrapperEl = $state<HTMLDivElement | null>(null);
   let hoverRgb = $state<RGB | null>(null);
+  let hoverAlpha = $state<number>(255);
   let hoverX = $state<number>(0);
   let hoverY = $state<number>(0);
   let flash = $state<string | null>(null);
@@ -57,6 +58,7 @@
     if (x < 0 || y < 0 || x >= canvasEl.width || y >= canvasEl.height) return;
     const d = ctx.getImageData(x, y, 1, 1).data;
     hoverRgb = [d[0], d[1], d[2]];
+    hoverAlpha = d[3];
     const wrapRect = wrapperEl?.getBoundingClientRect();
     if (wrapRect) {
       hoverX = e.clientX - wrapRect.left;
@@ -66,11 +68,14 @@
 
   function onCanvasLeave(): void {
     hoverRgb = null;
+    hoverAlpha = 255;
   }
 
   async function onCanvasClick(): Promise<void> {
     if (!hoverRgb) return;
-    const val = formatColor(hoverRgb, settings.state.copyFormat);
+    const val = hasAlpha(hoverAlpha)
+      ? formatColorA(hoverRgb, hoverAlpha, settings.state.copyFormat)
+      : formatColor(hoverRgb, settings.state.copyFormat);
     try {
       await navigator.clipboard.writeText(val);
       triggerFlash(val);
@@ -90,7 +95,14 @@
   }
 
   const hoverHex = $derived(hoverRgb ? rgbToHex(hoverRgb) : "");
-  const hoverOut = $derived(hoverRgb ? formatColor(hoverRgb, settings.state.copyFormat) : "");
+  const hoverOut = $derived(
+    hoverRgb
+      ? hasAlpha(hoverAlpha)
+        ? formatColorA(hoverRgb, hoverAlpha, settings.state.copyFormat)
+        : formatColor(hoverRgb, settings.state.copyFormat)
+      : "",
+  );
+  const hoverAlphaPct = $derived(Math.round((hoverAlpha / 255) * 100));
 </script>
 
 <div class="viewer">
@@ -120,10 +132,15 @@
         class="dropper"
         style="left:{hoverX + 16}px; top:{hoverY + 16}px;"
       >
-        <div class="swatch" style="background: {hoverHex};"></div>
+        <div class="swatch-wrap">
+          <div class="swatch" style="background: {hoverHex}; opacity: {hoverAlpha / 255};"></div>
+        </div>
         <div class="vals">
           <div class="hex">{hoverHex}</div>
           <div class="out">{hoverOut}</div>
+          {#if hasAlpha(hoverAlpha)}
+            <div class="alpha">α {hoverAlphaPct} %</div>
+          {/if}
         </div>
       </div>
     {/if}
@@ -178,7 +195,14 @@
     position: relative;
     min-height: 0;
     overflow: hidden;
-    background: var(--surface-2);
+    background-color: var(--surface-2);
+    background-image:
+      linear-gradient(45deg, rgba(255, 255, 255, 0.06) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba(255, 255, 255, 0.06) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.06) 75%),
+      linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.06) 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0;
     border: 1px solid var(--border);
     display: grid;
     place-items: center;
@@ -203,10 +227,27 @@
     pointer-events: none;
     box-shadow: 0 4px 16px #0008;
   }
-  .swatch {
+  .swatch-wrap {
     width: 32px;
     height: 32px;
+    background-image:
+      linear-gradient(45deg, rgba(255, 255, 255, 0.12) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba(255, 255, 255, 0.12) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.12) 75%),
+      linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.12) 75%);
+    background-size: 10px 10px;
+    background-position: 0 0, 0 5px, 5px -5px, -5px 0;
+    background-color: #1a1a20;
     border: 1px solid var(--border-strong);
+  }
+  .swatch {
+    width: 100%;
+    height: 100%;
+  }
+  .alpha {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
   }
   .vals {
     display: flex;
