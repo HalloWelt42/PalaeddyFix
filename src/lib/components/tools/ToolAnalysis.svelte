@@ -15,35 +15,48 @@
   let flash = $state<string | null>(null);
   let flashTimer: ReturnType<typeof setTimeout> | null = null;
 
+  const DEBOUNCE_MS = 350;
+  let freqTimer: ReturnType<typeof setTimeout> | null = null;
+  let rareTimer: ReturnType<typeof setTimeout> | null = null;
+
   $effect(() => {
     const id = selection.id;
     if (!id) {
       analysis.clear();
       return;
     }
-    void analysis.loadCached(id);
+    void (async () => {
+      const hadCache = await analysis.loadCached(id);
+      if (!hadCache && !analysis.running) {
+        await analysis.analyze(id);
+      }
+    })();
   });
 
   async function onFrequentCount(e: Event): Promise<void> {
     const v = Number((e.target as HTMLInputElement).value);
     analysis.setColorCount(v);
-    if (selection.id) await analysis.loadCached(selection.id);
+    if (!selection.id) return;
+    const hadCache = await analysis.loadCached(selection.id);
+    if (freqTimer) clearTimeout(freqTimer);
+    if (!hadCache) {
+      freqTimer = setTimeout(() => {
+        if (selection.id && !analysis.running) void analysis.analyze(selection.id);
+      }, DEBOUNCE_MS);
+    }
   }
 
   async function onRareCount(e: Event): Promise<void> {
     const v = Number((e.target as HTMLInputElement).value);
     analysis.setRareColorCount(v);
-    if (selection.id) await analysis.loadRareCached(selection.id);
-  }
-
-  async function doAnalyzeFrequent(): Promise<void> {
     if (!selection.id) return;
-    await analysis.analyze(selection.id);
-  }
-
-  async function doAnalyzeRare(): Promise<void> {
-    if (!selection.id) return;
-    await analysis.analyzeRare(selection.id);
+    const hadCache = await analysis.loadRareCached(selection.id);
+    if (rareTimer) clearTimeout(rareTimer);
+    if (!hadCache) {
+      rareTimer = setTimeout(() => {
+        if (selection.id && !analysis.rareRunning) void analysis.analyzeRare(selection.id);
+      }, DEBOUNCE_MS);
+    }
   }
 
   async function copyColor(c: PaletteColor): Promise<void> {
@@ -118,23 +131,20 @@
         <span class="n">{analysis.colorCount}</span>
       </div>
 
-      <button
-        type="button"
-        class="btn btn-primary big"
-        onclick={doAnalyzeFrequent}
-        disabled={analysis.running || analysis.rareRunning}
-      >
-        {#if analysis.running}
-          <span class="btn-progress" style="width: {analysis.progress * 100}%"></span>
-          <span class="btn-label">Analyse {Math.round(analysis.progress * 100)} %</span>
-        {:else}
-          <span class="btn-label">Häufigste analysieren</span>
-        {/if}
-      </button>
-
-      {#if analysis.cached && !analysis.running && analysis.colors.length > 0}
-        <div class="tag-row"><span class="tag">Cache</span></div>
-      {/if}
+      <div class="status-bar" class:on={analysis.running}>
+        <span class="status-progress" style="width: {analysis.running ? analysis.progress * 100 : 0}%"></span>
+        <span class="status-label">
+          {#if analysis.running}
+            Analyse läuft {Math.round(analysis.progress * 100)} %
+          {:else if analysis.cached && analysis.colors.length > 0}
+            Aus Cache · automatisch aktualisiert
+          {:else if analysis.colors.length > 0}
+            Aktuell · Slider bewegt sich, Analyse folgt automatisch
+          {:else}
+            Wird automatisch analysiert, sobald du den Slider bewegst
+          {/if}
+        </span>
+      </div>
 
       {#if analysis.colors.length > 0}
         <StackedBar colors={analysis.colors} />
@@ -184,23 +194,20 @@
         <span class="n">{analysis.rareColorCount}</span>
       </div>
 
-      <button
-        type="button"
-        class="btn btn-primary big"
-        onclick={doAnalyzeRare}
-        disabled={analysis.running || analysis.rareRunning}
-      >
-        {#if analysis.rareRunning}
-          <span class="btn-progress" style="width: {analysis.rareProgress * 100}%"></span>
-          <span class="btn-label">Analyse {Math.round(analysis.rareProgress * 100)} %</span>
-        {:else}
-          <span class="btn-label">Seltenste analysieren</span>
-        {/if}
-      </button>
-
-      {#if analysis.rareCached && !analysis.rareRunning && analysis.rareColors.length > 0}
-        <div class="tag-row"><span class="tag">Cache</span></div>
-      {/if}
+      <div class="status-bar" class:on={analysis.rareRunning}>
+        <span class="status-progress" style="width: {analysis.rareRunning ? analysis.rareProgress * 100 : 0}%"></span>
+        <span class="status-label">
+          {#if analysis.rareRunning}
+            Analyse läuft {Math.round(analysis.rareProgress * 100)} %
+          {:else if analysis.rareCached && analysis.rareColors.length > 0}
+            Aus Cache · automatisch aktualisiert
+          {:else if analysis.rareColors.length > 0}
+            Aktuell · Slider bewegt sich, Analyse folgt automatisch
+          {:else}
+            Bewege den Slider, um die Rare-Analyse zu starten
+          {/if}
+        </span>
+      </div>
 
       {#if analysis.rareColors.length > 0}
         <StackedBar colors={rareSorted} />
@@ -336,64 +343,34 @@
     accent-color: var(--text);
   }
 
-  .btn {
+  .status-bar {
     position: relative;
     overflow: hidden;
     background: var(--surface-2);
-    border: 1px solid var(--border-strong);
-    color: var(--text);
-    padding: 8px 14px;
-    font-size: 12px;
+    border: 1px solid var(--border);
+    padding: 8px 12px;
     border-radius: var(--radius-btn);
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
   }
-  .btn.big {
-    padding: 12px 14px;
-    font-size: 13px;
+  .status-bar.on {
+    border-color: var(--accent-line);
   }
-  .btn-primary {
-    background: var(--text);
-    color: var(--bg);
-    border-color: var(--text);
-    font-weight: 600;
-  }
-  .btn-primary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  .btn-primary:hover:not(:disabled) {
-    opacity: 0.9;
-  }
-  .btn-progress {
+  .status-progress {
     position: absolute;
     left: 0;
     top: 0;
     bottom: 0;
-    background: var(--accent);
+    background: var(--accent-soft);
     z-index: 0;
     transition: width 0.15s linear;
   }
-  .btn-label {
+  .status-label {
     position: relative;
     z-index: 1;
   }
 
-  .tag-row {
-    display: flex;
-  }
-  .tag {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border: 1px solid var(--border-strong);
-    padding: 2px 6px;
-  }
 
   .between {
     display: flex;
