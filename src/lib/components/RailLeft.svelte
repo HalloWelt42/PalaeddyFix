@@ -14,12 +14,7 @@
 
   const top: RailItem[] = [
     { key: "gallery", name: "grid", title: "Galerie", badge: () => String(gallery.items.length) },
-    { key: "import", name: "upload", title: "Importieren" },
-    { key: "favorites", name: "star", title: "Favoriten" },
-    { key: "tags", name: "tag", title: "Tags" },
-    { key: "folders", name: "folder", title: "Ordner" },
   ];
-  const bottom: RailItem[] = [{ key: "trash", name: "trash", title: "Papierkorb" }];
 </script>
 
 <aside class="rail left">
@@ -34,18 +29,6 @@
       >
         <Icon name={item.name} size={18} />
         {#if item.badge && item.badge() && Number(item.badge()) > 0}<span class="badge">{item.badge()}</span>{/if}
-      </button>
-    {/each}
-    <div class="sep"></div>
-    {#each bottom as item (item.key)}
-      <button
-        class="rail-btn"
-        class:active={ui.activeLeft === item.key}
-        title={item.title}
-        type="button"
-        onclick={() => ui.setLeft(item.key)}
-      >
-        <Icon name={item.name} size={18} />
       </button>
     {/each}
   </div>
@@ -119,11 +102,5 @@
     min-width: 14px;
     text-align: center;
     line-height: 1.2;
-  }
-  .sep {
-    width: 24px;
-    height: 1px;
-    background: var(--border);
-    margin: 6px 0;
   }
 </style>

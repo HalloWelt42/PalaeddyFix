@@ -144,7 +144,7 @@
       onpointermove={onDragMove}
       onpointerup={onDragEnd}
       onpointercancel={onDragEnd}
-      role="toolbar"
+      role="presentation"
     >
       <div class="drag-title">
         <Icon name="info" size={28} />

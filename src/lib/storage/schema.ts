@@ -55,3 +55,20 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultColorCount: 16,
   copyFormat: "hex",
 };
+
+export type PaletteSource =
+  | "analysis-frequent"
+  | "analysis-rare"
+  | "manual"
+  | "snapshot";
+
+export type StoredPalette = {
+  id: string;
+  name: string;
+  source: PaletteSource;
+  sourceImageId?: string;
+  colors: Array<[number, number, number]>;
+  createdAt: number;
+  pinned: boolean;
+  note?: string;
+};

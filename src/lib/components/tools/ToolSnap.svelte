@@ -84,7 +84,8 @@
     previewCanvas.height = out.height;
     const ctx = previewCanvas.getContext("2d");
     if (!ctx) return;
-    const imgData = new ImageData(out.pixels, out.width, out.height);
+    const imgData = ctx.createImageData(out.width, out.height);
+    imgData.data.set(out.pixels);
     ctx.putImageData(imgData, 0, 0);
   }
 

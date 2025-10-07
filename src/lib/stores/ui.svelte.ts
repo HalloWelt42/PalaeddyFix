@@ -6,10 +6,16 @@ class UIStore {
   activeLeft = $state<LeftTab>("gallery");
   panelOpen = $state<boolean>(true);
   settingsOpen = $state<boolean>(false);
+  contrastMatrixFull = $state<boolean>(false);
 
   setTool(tool: ToolKey): void {
     this.activeTool = tool;
     this.panelOpen = true;
+    if (tool !== "contrast") this.contrastMatrixFull = false;
+  }
+
+  toggleContrastMatrixFull(): void {
+    this.contrastMatrixFull = !this.contrastMatrixFull;
   }
 
   setLeft(tab: LeftTab): void {
