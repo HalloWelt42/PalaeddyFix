@@ -1,6 +1,7 @@
 ---
 title: Alpha-Kanal
 subtitle: Transparenz im Bild
+wikipedia: https://de.wikipedia.org/wiki/Alphakanal
 ---
 
 PNG- und WEBP-Bilder können einen Alpha-Kanal enthalten: einen zusätzlichen Wert pro Pixel, der angibt, wie durchsichtig dieses Pixel ist. `0` bedeutet vollständig unsichtbar, `255` vollständig deckend.

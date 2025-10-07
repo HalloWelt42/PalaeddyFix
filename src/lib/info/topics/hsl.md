@@ -1,6 +1,7 @@
 ---
 title: HSL
 subtitle: Farbton, Sättigung, Helligkeit
+wikipedia: https://de.wikipedia.org/wiki/HSV-Farbraum
 ---
 
 HSL beschreibt Farben nach menschlich intuitiveren Achsen als RGB.

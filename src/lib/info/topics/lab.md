@@ -1,6 +1,7 @@
 ---
 title: LAB
 subtitle: Wahrnehmungsbasierter Farbraum
+wikipedia: https://de.wikipedia.org/wiki/Lab-Farbraum
 ---
 
 CIE L\*a\*b\* ist ein Farbraum, der so konstruiert wurde, dass gleiche numerische Abstände möglichst gleichen empfundenen Farbunterschieden entsprechen.

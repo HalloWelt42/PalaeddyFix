@@ -4,6 +4,7 @@ export type InfoTopic = {
   key: string;
   title: string;
   subtitle?: string;
+  wikipedia?: string;
   markdown: string;
   html: string;
 };
@@ -47,6 +48,7 @@ for (const [path, source] of Object.entries(rawFiles)) {
     key,
     title: meta.title ?? key,
     subtitle: meta.subtitle,
+    wikipedia: meta.wikipedia,
     markdown: body.trim(),
     html,
   };

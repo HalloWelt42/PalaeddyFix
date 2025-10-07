@@ -1,6 +1,7 @@
 ---
 title: Median-Cut
 subtitle: Algorithmus zur Farbreduktion
+wikipedia: https://de.wikipedia.org/wiki/Median_Cut
 ---
 
 Median-Cut ist ein klassisches Verfahren, um viele Farben eines Bildes auf eine gewünschte Anzahl zu reduzieren. Es teilt den Farbraum schrittweise in kleinere Kisten, bis die Zielanzahl erreicht ist.

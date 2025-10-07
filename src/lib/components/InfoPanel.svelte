@@ -199,6 +199,23 @@
     {#if !info.minimized}
       <div class="content">
         {@html topic.html}
+        {#if topic.wikipedia}
+          <aside class="wiki-foot">
+            <a
+              class="wiki-link"
+              href={topic.wikipedia}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <i class="fa-brands fa-wikipedia-w wiki-mark" aria-hidden="true"></i>
+              <span class="wiki-text">Weiterlesen auf Wikipedia</span>
+              <i
+                class="fa-solid fa-arrow-up-right-from-square wiki-ext"
+                aria-hidden="true"
+              ></i>
+            </a>
+          </aside>
+        {/if}
       </div>
 
       <div
@@ -411,6 +428,40 @@
   .content :global(a) {
     color: var(--info);
     text-decoration: underline;
+  }
+
+  .wiki-foot {
+    margin-top: 22px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .wiki-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--text);
+    text-decoration: none;
+    font-family: var(--font-button);
+    font-size: 13px;
+    font-weight: 600;
+    transition: border-color 0.12s, color 0.12s, background 0.12s;
+  }
+  .wiki-link:hover {
+    color: var(--info);
+    border-color: var(--info-line);
+    background: var(--info-soft);
+  }
+  .wiki-mark {
+    font-size: 18px;
+    line-height: 1;
+  }
+  .wiki-ext {
+    font-size: 10px;
+    opacity: 0.7;
   }
 
   .resize {

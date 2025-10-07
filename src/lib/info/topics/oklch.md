@@ -1,6 +1,7 @@
 ---
 title: OKLCH
 subtitle: Moderner Farbraum für CSS
+wikipedia: https://en.wikipedia.org/wiki/Oklab_color_space
 ---
 
 OKLCH ist ein wahrnehmungsbasierter Farbraum, der seit 2023 in allen gängigen Browsern direkt in CSS nutzbar ist. Er beschreibt Farben mit drei Werten:

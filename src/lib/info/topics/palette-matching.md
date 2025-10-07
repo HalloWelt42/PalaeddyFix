@@ -1,6 +1,7 @@
 ---
 title: Paletten-Matching
 subtitle: Welche vorgegebene Palette passt am besten?
+wikipedia: https://de.wikipedia.org/wiki/Farbpalette
 ---
 
 Für jede Bildfarbe wird die nächstgelegene Farbe aus der Vergleichs-Palette gesucht (per Delta-E-Distanz). Über alle Pixel gemittelt ergibt sich ein Score, der sagt, wie gut die Palette das Bild beschreibt.
