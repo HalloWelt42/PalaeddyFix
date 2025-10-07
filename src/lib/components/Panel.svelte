@@ -3,7 +3,7 @@
   import ToolAnalysis from "./tools/ToolAnalysis.svelte";
   import ToolExport from "./tools/ToolExport.svelte";
   import ToolPaletteMatch from "./tools/ToolPaletteMatch.svelte";
-  import ToolStub from "./tools/ToolStub.svelte";
+  import ToolSnap from "./tools/ToolSnap.svelte";
   import { ui } from "../stores/ui.svelte";
 
   const titles = {
@@ -29,11 +29,7 @@
     {:else if ui.activeTool === "palette"}
       <ToolPaletteMatch />
     {:else if ui.activeTool === "snap"}
-      <ToolStub
-        title="Snap-to-Palette"
-        plannedIn="v0.3"
-        description="Wandelt das Bild in eine Kopie um, die nur Farben der gewählten Palette verwendet. Mit optionalem Dithering."
-      />
+      <ToolSnap />
     {:else if ui.activeTool === "export"}
       <ToolExport />
     {/if}
