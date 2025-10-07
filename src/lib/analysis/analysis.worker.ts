@@ -49,9 +49,20 @@ self.addEventListener("message", async (event: MessageEvent<WorkerRequest>) => {
     post({ id: req.id, type: "progress", progress: 0.98 });
 
     const total = pixels.length || 1;
-    const colors: PaletteColor[] = quantized.map((q) => ({
+    const merged = new Map<string, { rgb: typeof quantized[number]["rgb"]; count: number }>();
+    for (const q of quantized) {
+      const hex = rgbToHex(q.rgb);
+      const existing = merged.get(hex);
+      if (existing) existing.count += q.count;
+      else merged.set(hex, { rgb: q.rgb, count: q.count });
+    }
+    const dedupedSorted = Array.from(merged.entries())
+      .map(([hex, v]) => ({ hex, rgb: v.rgb, count: v.count }))
+      .sort((a, b) => b.count - a.count);
+
+    const colors: PaletteColor[] = dedupedSorted.map((q) => ({
       rgb: q.rgb,
-      hex: rgbToHex(q.rgb),
+      hex: q.hex,
       count: q.count,
       percent: (q.count / total) * 100,
     }));
