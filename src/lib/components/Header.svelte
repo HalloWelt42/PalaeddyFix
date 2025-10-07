@@ -1,7 +1,5 @@
 <script lang="ts">
   import Icon from "./ui/Icon.svelte";
-  import { selection } from "../stores/selection.svelte";
-  import { gallery } from "../stores/gallery.svelte";
   import { ui } from "../stores/ui.svelte";
 
   type Props = {
@@ -9,11 +7,6 @@
   };
 
   const { onOpenPicker }: Props = $props();
-
-  const currentItem = $derived(gallery.items.find((i) => i.id === selection.id));
-
-  const primary = $derived(selection.id && currentItem ? "Detail" : "Galerie");
-  const secondary = $derived(currentItem ? currentItem.name : "---");
 
   const brand = "PaläddyFix";
   const brandChars: string[] = Array.from(brand);
@@ -43,11 +36,6 @@
       {/each}
     </div>
   </div>
-  <div class="header-center">
-    <div class="crumbs">
-      <span>{primary}</span> <b>/</b> <span class="secondary">{secondary}</span>
-    </div>
-  </div>
   <div class="header-right">
     <button
       class="btn btn-ghost"
@@ -71,9 +59,9 @@
 
 <style>
   .header {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
+    display: flex;
     align-items: center;
+    justify-content: space-between;
     padding: 0 14px;
     border-bottom: 1px solid var(--border);
     background: var(--surface);
@@ -102,27 +90,6 @@
   }
   .logo-name span {
     display: inline-block;
-  }
-  .header-center {
-    display: flex;
-    justify-content: center;
-  }
-  .crumbs {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-dim);
-    letter-spacing: 0.5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 360px;
-  }
-  .crumbs b {
-    color: var(--text);
-    font-weight: 500;
-  }
-  .crumbs .secondary {
-    color: var(--text);
   }
   .header-right {
     display: flex;
