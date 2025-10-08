@@ -1,9 +1,10 @@
-import type { AnalysisResult, StoredImage } from "./schema";
+import type { AnalysisResult, StoredImage, StoredPalette } from "./schema";
 
 const DB_NAME = "palaeddyfix";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_IMAGES = "images";
 const STORE_ANALYSES = "analyses";
+const STORE_PALETTES = "palettes";
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -21,6 +22,11 @@ function openDB(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_ANALYSES)) {
         const analyses = db.createObjectStore(STORE_ANALYSES, { keyPath: "key" });
         analyses.createIndex("imageId", "imageId");
+      }
+      if (!db.objectStoreNames.contains(STORE_PALETTES)) {
+        const palettes = db.createObjectStore(STORE_PALETTES, { keyPath: "id" });
+        palettes.createIndex("createdAt", "createdAt");
+        palettes.createIndex("pinned", "pinned");
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -166,4 +172,44 @@ async function deleteAnalysesFor(imageId: string): Promise<void> {
 export async function clearAll(): Promise<void> {
   await tx(STORE_IMAGES, "readwrite", (s) => s.clear());
   await tx(STORE_ANALYSES, "readwrite", (s) => s.clear());
+  await tx(STORE_PALETTES, "readwrite", (s) => s.clear());
+}
+
+export async function putPalette(p: StoredPalette): Promise<void> {
+  await tx(STORE_PALETTES, "readwrite", (s) => s.put(p));
+}
+
+export async function getPalette(id: string): Promise<StoredPalette | undefined> {
+  return tx<StoredPalette | undefined>(STORE_PALETTES, "readonly", (s) => s.get(id));
+}
+
+export async function deletePalette(id: string): Promise<void> {
+  await tx(STORE_PALETTES, "readwrite", (s) => s.delete(id));
+}
+
+export async function listPalettes(): Promise<StoredPalette[]> {
+  const items: StoredPalette[] = [];
+  return txCursor<StoredPalette[]>(
+    STORE_PALETTES,
+    "readonly",
+    (s) => {
+      const req = s.index("createdAt").openCursor(null, "prev");
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (cursor) {
+          items.push(cursor.value as StoredPalette);
+          cursor.continue();
+        }
+      };
+    },
+    () => {},
+    () => items,
+  );
+}
+
+export async function setPalettePinned(id: string, pinned: boolean): Promise<void> {
+  const p = await getPalette(id);
+  if (!p) return;
+  p.pinned = pinned;
+  await putPalette(p);
 }

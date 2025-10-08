@@ -14,6 +14,7 @@
   import { info } from "../stores/info.svelte";
   import { ui } from "../stores/ui.svelte";
   import { analysis } from "../stores/analysis.svelte";
+  import { palettes } from "../stores/palettes.svelte";
   import { installClipboardListener } from "../import/clipboard";
   import { ingestFiles } from "../import/fileIntake";
   import { selection } from "../stores/selection.svelte";
@@ -87,6 +88,7 @@
     settings.init();
     info.init();
     void gallery.init();
+    void palettes.init();
 
     const removeClipboard = installClipboardListener(async (files) => {
       const images = await ingestFiles(files);

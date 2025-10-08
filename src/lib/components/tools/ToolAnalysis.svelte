@@ -6,9 +6,11 @@
   import { selection } from "../../stores/selection.svelte";
   import { analysis } from "../../stores/analysis.svelte";
   import { settings } from "../../stores/settings.svelte";
+  import { gallery } from "../../stores/gallery.svelte";
+  import { palettes } from "../../stores/palettes.svelte";
   import { formatColor, isLight } from "../../analysis/convert";
   import { pickDistinctColors } from "../../analysis/distinct";
-  import type { CopyFormat, PaletteColor } from "../../storage/schema";
+  import type { CopyFormat, PaletteColor, PaletteSource } from "../../storage/schema";
 
   type TabKey = "frequent" | "rare" | "distinct";
   let activeTab = $state<TabKey>("frequent");
@@ -84,6 +86,23 @@
   const distinctColors = $derived(
     distinctPool.length > 0 ? pickDistinctColors(distinctPool, distinctCount) : [],
   );
+
+  const currentItem = $derived(gallery.items.find((i) => i.id === selection.id));
+
+  function defaultPaletteName(source: PaletteSource): string {
+    const base = currentItem?.name?.replace(/\.[^.]+$/, "") ?? "Palette";
+    if (source === "analysis-frequent") return `${base} - Häufigste`;
+    if (source === "analysis-rare") return `${base} - Seltenste`;
+    return base;
+  }
+
+  async function saveAsPalette(source: PaletteSource, colors: PaletteColor[]): Promise<void> {
+    if (colors.length === 0) return;
+    const name = window.prompt("Palettenname", defaultPaletteName(source));
+    if (!name || !name.trim()) return;
+    await palettes.saveFromColors(name.trim(), colors, source, selection.id ?? undefined);
+    showFlash(`Palette "${name.trim()}" gespeichert`);
+  }
 </script>
 
 {#if !selection.id}
@@ -151,11 +170,21 @@
         <StackedBar colors={distinctColors} />
         <div class="between">
           <span class="count">{distinctColors.length} Farben, maximal verschieden</span>
-          <Segmented
-            options={formatOptions}
-            value={settings.state.copyFormat}
-            onchange={onFormatChange}
-          />
+          <div class="actions">
+            <button
+              type="button"
+              class="save"
+              title="Als eigene Palette speichern"
+              onclick={() => void saveAsPalette("manual", distinctColors)}
+            >
+              <Icon name="star" size={11} /> Speichern
+            </button>
+            <Segmented
+              options={formatOptions}
+              value={settings.state.copyFormat}
+              onchange={onFormatChange}
+            />
+          </div>
         </div>
         <ul class="colors">
           {#each distinctColors as c, i (i + "-d-" + c.hex)}
@@ -221,11 +250,21 @@
         <StackedBar colors={analysis.colors} />
         <div class="between">
           <span class="count">{analysis.colors.length} Farben</span>
-          <Segmented
-            options={formatOptions}
-            value={settings.state.copyFormat}
-            onchange={onFormatChange}
-          />
+          <div class="actions">
+            <button
+              type="button"
+              class="save"
+              title="Als eigene Palette speichern"
+              onclick={() => void saveAsPalette("analysis-frequent", analysis.colors)}
+            >
+              <Icon name="star" size={11} /> Speichern
+            </button>
+            <Segmented
+              options={formatOptions}
+              value={settings.state.copyFormat}
+              onchange={onFormatChange}
+            />
+          </div>
         </div>
         <ul class="colors">
           {#each analysis.colors as c, i (i + "-f-" + c.hex)}
@@ -284,11 +323,21 @@
         <StackedBar colors={rareSorted} />
         <div class="between">
           <span class="count">{analysis.rareColors.length} Farben, aufsteigend</span>
-          <Segmented
-            options={formatOptions}
-            value={settings.state.copyFormat}
-            onchange={onFormatChange}
-          />
+          <div class="actions">
+            <button
+              type="button"
+              class="save"
+              title="Als eigene Palette speichern"
+              onclick={() => void saveAsPalette("analysis-rare", rareSorted)}
+            >
+              <Icon name="star" size={11} /> Speichern
+            </button>
+            <Segmented
+              options={formatOptions}
+              value={settings.state.copyFormat}
+              onchange={onFormatChange}
+            />
+          </div>
         </div>
         <ul class="colors">
           {#each rareSorted as c, i (i + "-r-" + c.hex)}
@@ -448,6 +497,31 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+    flex-wrap: wrap;
+  }
+  .actions {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .save {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text-dim);
+    font-family: var(--font-button);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: color 0.12s, border-color 0.12s;
+  }
+  .save:hover {
+    color: var(--text);
+    border-color: var(--text-dim);
   }
   .count {
     font-family: var(--font-mono);

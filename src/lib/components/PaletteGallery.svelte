@@ -2,11 +2,43 @@
   import Icon from "./ui/Icon.svelte";
   import { listBuiltinPalettes } from "../palettes/builtin";
   import { rgbToHex } from "../analysis/convert";
+  import { palettes } from "../stores/palettes.svelte";
+  import type { PaletteSource } from "../storage/schema";
 
   type Tab = "builtin" | "own";
   let activeTab = $state<Tab>("builtin");
 
   const builtinPalettes = listBuiltinPalettes();
+
+  const sourceLabel: Record<PaletteSource, string> = {
+    "analysis-frequent": "Häufigste",
+    "analysis-rare": "Seltenste",
+    manual: "Manuell",
+    snapshot: "Snapshot",
+  };
+
+  const ownSorted = $derived(
+    [...palettes.items].sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+      return b.createdAt - a.createdAt;
+    }),
+  );
+
+  async function onRename(id: string, current: string): Promise<void> {
+    const name = window.prompt("Neuer Name", current);
+    if (name && name.trim()) await palettes.rename(id, name.trim());
+  }
+
+  async function onDelete(id: string, name: string): Promise<void> {
+    if (!window.confirm(`Palette "${name}" wirklich löschen?`)) return;
+    await palettes.remove(id);
+  }
+
+  function formatDate(ts: number): string {
+    const d = new Date(ts);
+    const pad = (n: number): string => n.toString().padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
 </script>
 
 <div class="pal-gallery">
@@ -35,7 +67,7 @@
         onclick={() => (activeTab = "own")}
       >
         Eigene
-        <span class="count">0</span>
+        <span class="count">{palettes.items.length}</span>
       </button>
     </div>
   </div>
@@ -82,17 +114,67 @@
           </article>
         {/each}
       </div>
-    {:else}
+    {:else if ownSorted.length === 0}
       <div class="empty">
         <Icon name="palette" size={48} />
         <h3>Noch keine eigenen Paletten</h3>
         <p>
-          Hier landen Paletten, die du selbst anlegst oder aus Analysen
-          speicherst -- z. B. die häufigsten Farben eines Lieblingsbildes,
-          eine kuratierte Auswahl aus der Seltenste-Liste oder importierte
-          GIMP-, CSS- oder JSON-Paletten. Die Verwaltung wird gerade
-          vorbereitet.
+          In der Analyse findest du einen Button <b>Als Palette speichern</b> --
+          damit legst du die aktuelle Farbauswahl hier ab. Du kannst sie später
+          umbenennen, anpinnen oder wieder löschen.
         </p>
+      </div>
+    {:else}
+      <p class="intro">
+        Selbst gespeicherte Paletten. Gepinnte stehen oben. Klick auf den
+        Stift benennt um, das Stern-Icon pinnt, der Mülleimer löscht.
+      </p>
+      <div class="grid">
+        {#each ownSorted as pal (pal.id)}
+          <article class="card" class:pinned={pal.pinned}>
+            <header>
+              <div class="name-row">
+                <h3>{pal.name}</h3>
+                <span class="src">{sourceLabel[pal.source]}</span>
+              </div>
+              <div class="own-actions">
+                <button
+                  type="button"
+                  class="mini"
+                  title={pal.pinned ? "Pin entfernen" : "Anpinnen"}
+                  onclick={() => void palettes.togglePin(pal.id)}
+                >
+                  <Icon name="star" size={12} />
+                </button>
+                <button
+                  type="button"
+                  class="mini"
+                  title="Umbenennen"
+                  onclick={() => void onRename(pal.id, pal.name)}
+                >
+                  <Icon name="tag" size={12} />
+                </button>
+                <button
+                  type="button"
+                  class="mini danger"
+                  title="Löschen"
+                  onclick={() => void onDelete(pal.id, pal.name)}
+                >
+                  <Icon name="trash" size={12} />
+                </button>
+              </div>
+            </header>
+            <div class="swatches">
+              {#each pal.colors as rgb, i (i)}
+                <span class="sw" style="background: {rgbToHex(rgb)};" title={rgbToHex(rgb)}></span>
+              {/each}
+            </div>
+            <footer>
+              <span class="n">{pal.colors.length} Farben</span>
+              <span class="desc">{formatDate(pal.createdAt)}</span>
+            </footer>
+          </article>
+        {/each}
       </div>
     {/if}
   </div>
@@ -243,6 +325,39 @@
   }
   .wiki-lang {
     font-weight: 700;
+  }
+  .src {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .own-actions {
+    display: inline-flex;
+    gap: 2px;
+  }
+  .mini {
+    width: 22px;
+    height: 22px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-dim);
+    display: grid;
+    place-items: center;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .mini:hover {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .mini.danger:hover {
+    color: #ef4444;
+  }
+  .card.pinned {
+    border-color: var(--accent-line);
   }
   .card .author {
     font-family: var(--font-mono);
