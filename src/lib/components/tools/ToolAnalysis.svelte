@@ -76,6 +76,14 @@
   ];
 
   const rareSorted = $derived([...analysis.rareColors].slice().reverse());
+
+  const distinctPool = $derived.by(() => {
+    if (analysis.rareColors.length >= 32) return analysis.rareColors;
+    return analysis.colors;
+  });
+  const distinctColors = $derived(
+    distinctPool.length > 0 ? pickDistinctColors(distinctPool, distinctCount) : [],
+  );
 </script>
 
 {#if !selection.id}
@@ -102,9 +110,83 @@
     >
       Seltenste
     </button>
+    <button
+      type="button"
+      class="tab"
+      class:active={activeTab === "distinct"}
+      onclick={() => (activeTab = "distinct")}
+    >
+      Kontrastreich
+    </button>
   </div>
 
-  {#if activeTab === "frequent"}
+  {#if activeTab === "distinct"}
+    <div class="tab-panel">
+      <div class="control-row">
+        <label class="k" for="cc-dist">Anzahl</label>
+        <input
+          id="cc-dist"
+          type="range"
+          min="2"
+          max="32"
+          step="1"
+          bind:value={distinctCount}
+        />
+        <span class="n">{distinctCount}</span>
+      </div>
+
+      <div class="status-bar">
+        <span class="status-label">
+          {#if distinctPool.length === 0}
+            Erst Analyse durchlaufen lassen
+          {:else if distinctPool === analysis.rareColors}
+            Farthest-Point-Sampling aus {distinctPool.length} Ausreißer-Farben
+          {:else}
+            Farthest-Point-Sampling aus {distinctPool.length} Häufigste-Farben
+          {/if}
+        </span>
+      </div>
+
+      {#if distinctColors.length > 0}
+        <StackedBar colors={distinctColors} />
+        <div class="between">
+          <span class="count">{distinctColors.length} Farben, maximal verschieden</span>
+          <Segmented
+            options={formatOptions}
+            value={settings.state.copyFormat}
+            onchange={onFormatChange}
+          />
+        </div>
+        <ul class="colors">
+          {#each distinctColors as c, i (i + "-d-" + c.hex)}
+            <li>
+              <button
+                type="button"
+                class="color-btn"
+                onclick={() => copyColor(c)}
+                title="Klick zum Kopieren"
+                style="--sw: {c.hex};"
+              >
+                <span class="swatch"></span>
+                <span class="vals">
+                  <span class="hex">{c.hex}</span>
+                  <span class="fmt">{formatColor(c.rgb, settings.state.copyFormat)}</span>
+                </span>
+                <span class="rank">#{i + 1}</span>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {:else}
+        <div class="hint">
+          Wählt per
+          <InfoLink topic="cie2000">Delta E (CIE2000)</InfoLink>
+          eine Teilmenge, die sich perzeptiv maximal voneinander unterscheidet --
+          nützlich für Labels, Diagramme oder Kategorien.
+        </div>
+      {/if}
+    </div>
+  {:else if activeTab === "frequent"}
     <div class="tab-panel">
       <div class="control-row">
         <label class="k" for="cc-freq">Farben</label>
@@ -276,7 +358,7 @@
 
   .tabs {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 0;
     border-bottom: 1px solid var(--border-strong);
     margin-bottom: 14px;
@@ -457,12 +539,17 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .pct {
+  .pct,
+  .rank {
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--text);
     font-weight: 600;
     text-align: right;
+  }
+  .rank {
+    color: var(--text-dim);
+    font-size: 10px;
   }
 
   .flash {
