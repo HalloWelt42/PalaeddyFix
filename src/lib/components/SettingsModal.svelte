@@ -32,6 +32,7 @@
   const alphaOptions: { value: AlphaMode; label: string }[] = [
     { value: "ignore", label: "Ignorieren" },
     { value: "factor", label: "Als Faktor" },
+    { value: "keep", label: "Mitführen" },
   ];
 
   async function handleClear(): Promise<void> {

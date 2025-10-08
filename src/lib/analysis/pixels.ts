@@ -3,6 +3,7 @@ import type { Pixel } from "./quantize";
 
 export type PixelsResult = {
   pixels: Pixel[];
+  alphas?: number[];
   width: number;
   height: number;
 };
@@ -30,11 +31,17 @@ export async function blobToPixels(
 
     const data = ctx.getImageData(0, 0, w, h).data;
     const pixels: Pixel[] = [];
+    const alphas: number[] = [];
+    const keepAlpha = alpha === "keep";
     const ignoreAlpha = alpha === "ignore";
     for (let i = 0; i < data.length; i += 4) {
       const a = data[i + 3];
       if (ignoreAlpha && a < 8) continue;
-      if (ignoreAlpha) {
+      if (keepAlpha) {
+        if (a < 8) continue;
+        pixels.push([data[i], data[i + 1], data[i + 2]]);
+        alphas.push(a);
+      } else if (ignoreAlpha) {
         pixels.push([data[i], data[i + 1], data[i + 2]]);
       } else {
         const f = a / 255;
@@ -45,7 +52,7 @@ export async function blobToPixels(
         ]);
       }
     }
-    return { pixels, width: w, height: h };
+    return keepAlpha ? { pixels, alphas, width: w, height: h } : { pixels, width: w, height: h };
   } finally {
     bitmap.close();
   }

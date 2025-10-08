@@ -1,5 +1,25 @@
 import type { PaletteColor } from "../storage/schema";
 
+function hasAnyAlpha(colors: PaletteColor[]): boolean {
+  return colors.some((c) => typeof c.alpha === "number" && c.alpha < 255);
+}
+
+function alphaOf(c: PaletteColor): number {
+  return typeof c.alpha === "number" ? c.alpha : 255;
+}
+
+function hex8(c: PaletteColor): string {
+  const a = alphaOf(c);
+  const aa = a.toString(16).padStart(2, "0");
+  return `${c.hex}${aa}`;
+}
+
+function rgbaCss(c: PaletteColor): string {
+  const a = alphaOf(c) / 255;
+  const af = a === 1 ? "1" : a.toFixed(3).replace(/\.?0+$/, "");
+  return `rgba(${c.rgb[0]}, ${c.rgb[1]}, ${c.rgb[2]}, ${af})`;
+}
+
 export type ExportFormat =
   | "hex"
   | "css"
@@ -59,45 +79,55 @@ function swiftFloat(n: number): string {
 }
 
 export function exportHexList(colors: PaletteColor[]): ExportOutput {
-  const content = colors.map((c) => c.hex).join("\n") + "\n";
+  const withAlpha = hasAnyAlpha(colors);
+  const content = colors.map((c) => (withAlpha ? hex8(c) : c.hex)).join("\n") + "\n";
   return { filename: "palette.txt", mime: "text/plain", lang: "plain", content };
 }
 
 export function exportCss(colors: PaletteColor[]): ExportOutput {
+  const withAlpha = hasAnyAlpha(colors);
   const lines: string[] = [":root {"];
   colors.forEach((c, i) => {
-    lines.push(`  --color-${slug(i)}: ${c.hex}; /* ${c.percent.toFixed(1)}% */`);
+    const val = withAlpha ? rgbaCss(c) : c.hex;
+    lines.push(`  --color-${slug(i)}: ${val}; /* ${c.percent.toFixed(1)}% */`);
   });
   lines.push("}", "");
   return { filename: "palette.css", mime: "text/css", lang: "css", content: lines.join("\n") };
 }
 
 export function exportScss(colors: PaletteColor[]): ExportOutput {
+  const withAlpha = hasAnyAlpha(colors);
+  const val = (c: PaletteColor): string => (withAlpha ? rgbaCss(c) : c.hex);
   const lines: string[] = [];
   colors.forEach((c, i) => {
-    lines.push(`$color-${slug(i)}: ${c.hex}; // ${c.percent.toFixed(1)}%`);
+    lines.push(`$color-${slug(i)}: ${val(c)}; // ${c.percent.toFixed(1)}%`);
   });
   lines.push("");
   lines.push("$palette: (");
   colors.forEach((c, i) => {
     const sep = i === colors.length - 1 ? "" : ",";
-    lines.push(`  "${slug(i)}": ${c.hex}${sep}`);
+    lines.push(`  "${slug(i)}": ${val(c)}${sep}`);
   });
   lines.push(");", "");
   return { filename: "palette.scss", mime: "text/x-scss", lang: "scss", content: lines.join("\n") };
 }
 
 export function exportLess(colors: PaletteColor[]): ExportOutput {
+  const withAlpha = hasAnyAlpha(colors);
   const lines: string[] = [];
   colors.forEach((c, i) => {
-    lines.push(`@color-${slug(i)}: ${c.hex}; // ${c.percent.toFixed(1)}%`);
+    const val = withAlpha ? rgbaCss(c) : c.hex;
+    lines.push(`@color-${slug(i)}: ${val}; // ${c.percent.toFixed(1)}%`);
   });
   lines.push("");
   return { filename: "palette.less", mime: "text/x-less", lang: "less", content: lines.join("\n") };
 }
 
 export function exportTailwind(colors: PaletteColor[]): ExportOutput {
-  const entries = colors.map((c, i) => `      "${slug(i)}": "${c.hex}",`).join("\n");
+  const withAlpha = hasAnyAlpha(colors);
+  const entries = colors
+    .map((c, i) => `      "${slug(i)}": "${withAlpha ? hex8(c) : c.hex}",`)
+    .join("\n");
   const content =
     `module.exports = {\n` +
     `  theme: {\n` +
@@ -119,12 +149,20 @@ export function exportTailwind(colors: PaletteColor[]): ExportOutput {
 }
 
 export function exportJson(colors: PaletteColor[]): ExportOutput {
-  const data = colors.map((c) => ({
-    hex: c.hex,
-    rgb: c.rgb,
-    percent: Number(c.percent.toFixed(3)),
-    count: c.count,
-  }));
+  const data = colors.map((c) => {
+    const base: Record<string, unknown> = {
+      hex: c.hex,
+      rgb: c.rgb,
+      percent: Number(c.percent.toFixed(3)),
+      count: c.count,
+    };
+    if (typeof c.alpha === "number") {
+      base.alpha = c.alpha;
+      base.hex8 = hex8(c);
+      base.rgba = [c.rgb[0], c.rgb[1], c.rgb[2], c.alpha];
+    }
+    return base;
+  });
   return {
     filename: "palette.json",
     mime: "application/json",
@@ -134,19 +172,16 @@ export function exportJson(colors: PaletteColor[]): ExportOutput {
 }
 
 export function exportCsv(colors: PaletteColor[]): ExportOutput {
-  const lines = ["index,hex,r,g,b,count,percent"];
+  const withAlpha = hasAnyAlpha(colors);
+  const header = withAlpha
+    ? "index,hex,r,g,b,a,count,percent"
+    : "index,hex,r,g,b,count,percent";
+  const lines = [header];
   colors.forEach((c, i) => {
-    lines.push(
-      [
-        slug(i),
-        c.hex,
-        c.rgb[0],
-        c.rgb[1],
-        c.rgb[2],
-        c.count,
-        c.percent.toFixed(3),
-      ].join(","),
-    );
+    const row = withAlpha
+      ? [slug(i), hex8(c), c.rgb[0], c.rgb[1], c.rgb[2], alphaOf(c), c.count, c.percent.toFixed(3)]
+      : [slug(i), c.hex, c.rgb[0], c.rgb[1], c.rgb[2], c.count, c.percent.toFixed(3)];
+    lines.push(row.join(","));
   });
   lines.push("");
   return { filename: "palette.csv", mime: "text/csv", lang: "plain", content: lines.join("\n") };
@@ -175,6 +210,7 @@ export function exportGpl(colors: PaletteColor[]): ExportOutput {
 }
 
 export function exportSvg(colors: PaletteColor[]): ExportOutput {
+  const withAlpha = hasAnyAlpha(colors);
   const cols = Math.max(1, Math.ceil(Math.sqrt(colors.length)));
   const size = 80;
   const rows = Math.ceil(colors.length / cols);
@@ -184,8 +220,10 @@ export function exportSvg(colors: PaletteColor[]): ExportOutput {
   colors.forEach((c, i) => {
     const x = (i % cols) * size;
     const y = Math.floor(i / cols) * size;
+    const opacity = withAlpha ? ` fill-opacity="${(alphaOf(c) / 255).toFixed(3)}"` : "";
+    const label = withAlpha ? `${hex8(c)} -- ${c.percent.toFixed(1)}%` : `${c.hex} -- ${c.percent.toFixed(1)}%`;
     rects.push(
-      `  <rect x="${x}" y="${y}" width="${size}" height="${size}" fill="${c.hex}"><title>${c.hex} -- ${c.percent.toFixed(1)}%</title></rect>`,
+      `  <rect x="${x}" y="${y}" width="${size}" height="${size}" fill="${c.hex}"${opacity}><title>${label}</title></rect>`,
     );
   });
   const content =
@@ -201,6 +239,7 @@ export function exportSvg(colors: PaletteColor[]): ExportOutput {
 }
 
 export function exportSwift(colors: PaletteColor[]): ExportOutput {
+  const withAlpha = hasAnyAlpha(colors);
   const lines: string[] = [
     "import SwiftUI",
     "",
@@ -208,9 +247,16 @@ export function exportSwift(colors: PaletteColor[]): ExportOutput {
   ];
   colors.forEach((c, i) => {
     const [r, g, b] = c.rgb;
-    lines.push(
-      `    static let palette${slug(i)} = Color(red: ${swiftFloat(r)}, green: ${swiftFloat(g)}, blue: ${swiftFloat(b)})`,
-    );
+    if (withAlpha) {
+      const op = (alphaOf(c) / 255).toFixed(4);
+      lines.push(
+        `    static let palette${slug(i)} = Color(red: ${swiftFloat(r)}, green: ${swiftFloat(g)}, blue: ${swiftFloat(b)}).opacity(${op})`,
+      );
+    } else {
+      lines.push(
+        `    static let palette${slug(i)} = Color(red: ${swiftFloat(r)}, green: ${swiftFloat(g)}, blue: ${swiftFloat(b)})`,
+      );
+    }
   });
   lines.push("}", "");
   return {
@@ -222,10 +268,12 @@ export function exportSwift(colors: PaletteColor[]): ExportOutput {
 }
 
 export function exportKotlin(colors: PaletteColor[]): ExportOutput {
+  const withAlpha = hasAnyAlpha(colors);
   const lines: string[] = ["import androidx.compose.ui.graphics.Color", ""];
   colors.forEach((c, i) => {
     const hex = c.hex.replace("#", "").toUpperCase();
-    lines.push(`val Palette${slug(i)} = Color(0xFF${hex})`);
+    const aa = withAlpha ? alphaOf(c).toString(16).padStart(2, "0").toUpperCase() : "FF";
+    lines.push(`val Palette${slug(i)} = Color(0x${aa}${hex})`);
   });
   lines.push("");
   return {
@@ -237,6 +285,7 @@ export function exportKotlin(colors: PaletteColor[]): ExportOutput {
 }
 
 export function exportDart(colors: PaletteColor[]): ExportOutput {
+  const withAlpha = hasAnyAlpha(colors);
   const lines: string[] = [
     "import 'package:flutter/material.dart';",
     "",
@@ -244,7 +293,8 @@ export function exportDart(colors: PaletteColor[]): ExportOutput {
   ];
   colors.forEach((c, i) => {
     const hex = c.hex.replace("#", "").toUpperCase();
-    lines.push(`  static const Color palette${slug(i)} = Color(0xFF${hex});`);
+    const aa = withAlpha ? alphaOf(c).toString(16).padStart(2, "0").toUpperCase() : "FF";
+    lines.push(`  static const Color palette${slug(i)} = Color(0x${aa}${hex});`);
   });
   lines.push("}", "");
   return {
@@ -256,17 +306,24 @@ export function exportDart(colors: PaletteColor[]): ExportOutput {
 }
 
 export function exportPython(colors: PaletteColor[]): ExportOutput {
+  const withAlpha = hasAnyAlpha(colors);
   const lines: string[] = [
     '"""Auto-generiert von PalaeddyFix."""',
     "",
     "palette = [",
   ];
   colors.forEach((c) => {
-    lines.push(`    (${c.rgb[0]}, ${c.rgb[1]}, ${c.rgb[2]}),  # ${c.hex}`);
+    if (withAlpha) {
+      lines.push(
+        `    (${c.rgb[0]}, ${c.rgb[1]}, ${c.rgb[2]}, ${alphaOf(c)}),  # ${hex8(c)}`,
+      );
+    } else {
+      lines.push(`    (${c.rgb[0]}, ${c.rgb[1]}, ${c.rgb[2]}),  # ${c.hex}`);
+    }
   });
   lines.push("]", "", "hex_palette = [");
   colors.forEach((c) => {
-    lines.push(`    "${c.hex}",`);
+    lines.push(`    "${withAlpha ? hex8(c) : c.hex}",`);
   });
   lines.push("]", "");
   return {

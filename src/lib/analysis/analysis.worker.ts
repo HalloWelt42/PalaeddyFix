@@ -40,7 +40,7 @@ self.addEventListener("message", async (event: MessageEvent<WorkerRequest>) => {
     post({ id: req.id, type: "progress", progress: 0.02 });
     const { blob, colorCount, downscaleTo, alpha } = req.payload;
 
-    const { pixels, width, height } = await blobToPixels(blob, downscaleTo, alpha);
+    const { pixels, alphas, width, height } = await blobToPixels(blob, downscaleTo, alpha);
     post({ id: req.id, type: "progress", progress: 0.25 });
 
     const quantized = medianCut(pixels, colorCount, (p) => {
@@ -60,12 +60,44 @@ self.addEventListener("message", async (event: MessageEvent<WorkerRequest>) => {
       .map(([hex, v]) => ({ hex, rgb: v.rgb, count: v.count }))
       .sort((a, b) => b.count - a.count);
 
-    const colors: PaletteColor[] = dedupedSorted.map((q) => ({
-      rgb: q.rgb,
-      hex: q.hex,
-      count: q.count,
-      percent: (q.count / total) * 100,
-    }));
+    let alphaByIdx: number[] | null = null;
+    if (alphas && dedupedSorted.length > 0) {
+      const sums = new Float64Array(dedupedSorted.length);
+      const counts = new Uint32Array(dedupedSorted.length);
+      for (let i = 0; i < pixels.length; i++) {
+        const [pr, pg, pb] = pixels[i];
+        let bestIdx = 0;
+        let bestDist = Infinity;
+        for (let j = 0; j < dedupedSorted.length; j++) {
+          const [qr, qg, qb] = dedupedSorted[j].rgb;
+          const dr = pr - qr;
+          const dg = pg - qg;
+          const db = pb - qb;
+          const d = dr * dr + dg * dg + db * db;
+          if (d < bestDist) {
+            bestDist = d;
+            bestIdx = j;
+          }
+        }
+        sums[bestIdx] += alphas[i];
+        counts[bestIdx]++;
+      }
+      alphaByIdx = [];
+      for (let j = 0; j < dedupedSorted.length; j++) {
+        alphaByIdx.push(counts[j] > 0 ? Math.round(sums[j] / counts[j]) : 255);
+      }
+    }
+
+    const colors: PaletteColor[] = dedupedSorted.map((q, idx) => {
+      const pc: PaletteColor = {
+        rgb: q.rgb,
+        hex: q.hex,
+        count: q.count,
+        percent: (q.count / total) * 100,
+      };
+      if (alphaByIdx) pc.alpha = alphaByIdx[idx];
+      return pc;
+    });
 
     post({
       id: req.id,

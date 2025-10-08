@@ -22,6 +22,7 @@ export type PaletteColor = {
   hex: string;
   count: number;
   percent: number;
+  alpha?: number;
 };
 
 export type AnalysisResult = {
@@ -36,7 +37,7 @@ export type AnalysisResult = {
   createdAt: number;
 };
 
-export type AlphaMode = "ignore" | "factor";
+export type AlphaMode = "ignore" | "factor" | "keep";
 export type ThemeMode = "dark" | "light" | "system";
 export type CopyFormat = "hex" | "rgb" | "hsl" | "oklch" | "named";
 
