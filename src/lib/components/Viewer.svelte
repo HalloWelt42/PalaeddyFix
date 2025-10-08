@@ -315,13 +315,11 @@
     min-height: 0;
     overflow: hidden;
     background-color: var(--surface-2);
-    background-image:
-      linear-gradient(45deg, rgba(255, 255, 255, 0.06) 25%, transparent 25%),
-      linear-gradient(-45deg, rgba(255, 255, 255, 0.06) 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.06) 75%),
-      linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.06) 75%);
+    background-image: repeating-conic-gradient(
+      rgba(255, 255, 255, 0.04) 0 90deg,
+      transparent 90deg 180deg
+    );
     background-size: 20px 20px;
-    background-position: 0 0, 0 10px, 10px -10px, -10px 0;
     border: 1px solid var(--border);
     display: grid;
     place-items: center;
