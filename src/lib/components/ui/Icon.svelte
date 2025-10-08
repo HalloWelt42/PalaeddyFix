@@ -19,7 +19,12 @@
     | "copy"
     | "speaker"
     | "stop"
-    | "contrast";
+    | "contrast"
+    | "sun"
+    | "moon"
+    | "desktop"
+    | "heart"
+    | "coffee";
 
   const MAP: Record<IconName, string> = {
     grid: "table-cells-large",
@@ -42,6 +47,11 @@
     speaker: "volume-high",
     stop: "stop",
     contrast: "circle-half-stroke",
+    sun: "sun",
+    moon: "moon",
+    desktop: "desktop",
+    heart: "heart",
+    coffee: "mug-saucer",
   };
 </script>
 

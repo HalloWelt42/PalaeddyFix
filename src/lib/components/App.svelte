@@ -8,6 +8,7 @@
   import Panel from "./Panel.svelte";
   import SettingsModal from "./SettingsModal.svelte";
   import InfoPanel from "./InfoPanel.svelte";
+  import DonationOverlay from "./DonationOverlay.svelte";
   import { gallery } from "../stores/gallery.svelte";
   import { settings } from "../stores/settings.svelte";
   import { info } from "../stores/info.svelte";
@@ -17,6 +18,7 @@
   import { selection } from "../stores/selection.svelte";
 
   let globalFileInput = $state<HTMLInputElement | null>(null);
+  let donationOpen = $state<boolean>(false);
 
   function openPicker(): void {
     globalFileInput?.click();
@@ -84,7 +86,7 @@
 <svelte:window onkeydown={onKey} />
 
 <div class="app">
-  <Header onOpenPicker={openPicker} />
+  <Header onOpenPicker={openPicker} onOpenDonation={() => (donationOpen = true)} />
   <div class="content" class:panel-closed={!ui.panelOpen}>
     <RailLeft />
     <Main />
@@ -96,6 +98,7 @@
   <Footer />
   <SettingsModal />
   <InfoPanel />
+  <DonationOverlay open={donationOpen} onClose={() => (donationOpen = false)} />
 
   <input
     bind:this={globalFileInput}
