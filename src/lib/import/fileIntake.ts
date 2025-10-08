@@ -1,4 +1,5 @@
 import type { StoredImage } from "../storage/schema";
+import { extractMetadata } from "./metadata";
 
 const ACCEPTED_MIME = new Set([
   "image/png",
@@ -21,6 +22,7 @@ export async function ingestFile(file: File): Promise<StoredImage> {
   try {
     const img = await loadImage(url);
     const thumbBlob = await makeThumb(img);
+    const meta = await extractMetadata(file).catch(() => ({}));
     return {
       id: cryptoRandomId(),
       name: file.name || "clipboard.png",
@@ -32,6 +34,7 @@ export async function ingestFile(file: File): Promise<StoredImage> {
       pinned: false,
       blob: file,
       thumbBlob,
+      meta,
     };
   } finally {
     URL.revokeObjectURL(url);

@@ -1,3 +1,16 @@
+export type ImageMetaInfo = {
+  format?: string;
+  bitDepth?: number;
+  channels?: "gray" | "gray-alpha" | "rgb" | "rgba" | "indexed";
+  hasAlpha?: boolean;
+  dpiX?: number;
+  dpiY?: number;
+  colorProfile?: string;
+  camera?: string;
+  software?: string;
+  createdRaw?: string;
+};
+
 export type StoredImage = {
   id: string;
   name: string;
@@ -11,6 +24,7 @@ export type StoredImage = {
   thumbBlob?: Blob;
   tags?: string[];
   note?: string;
+  meta?: ImageMetaInfo;
 };
 
 export type ImageListItem = Omit<StoredImage, "blob" | "thumbBlob"> & {

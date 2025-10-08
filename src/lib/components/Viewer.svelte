@@ -53,6 +53,15 @@
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
+  function channelLabel(c: NonNullable<NonNullable<typeof item>["meta"]>["channels"]): string {
+    if (c === "gray") return "Graustufen";
+    if (c === "gray-alpha") return "Graustufen + Alpha";
+    if (c === "rgb") return "RGB";
+    if (c === "rgba") return "RGBA";
+    if (c === "indexed") return "Indexed";
+    return "-";
+  }
+
   function onCanvasMove(e: MouseEvent): void {
     if (!canvasEl) return;
     const ctx = canvasEl.getContext("2d", { willReadFrequently: true });
@@ -240,11 +249,33 @@
   </div>
 
   {#if item}
+    {@const m = item.meta}
     <div class="footline">
       <div class="cell"><span class="k">Format</span><span class="v">{item.mime.replace("image/", "").toUpperCase()}</span></div>
       <div class="cell"><span class="k">Größe</span><span class="v">{formatSize(item.size)}</span></div>
       <div class="cell"><span class="k">Auflösung</span><span class="v">{item.width} × {item.height}</span></div>
-      <div class="cell"><span class="k">Erstellt</span><span class="v">{formatDate(item.createdAt)}</span></div>
+      {#if m?.bitDepth}
+        <div class="cell"><span class="k">Bit/Kanal</span><span class="v">{m.bitDepth}</span></div>
+      {/if}
+      {#if m?.channels}
+        <div class="cell"><span class="k">Kanäle</span><span class="v">{channelLabel(m.channels)}</span></div>
+      {/if}
+      {#if m?.dpiX}
+        <div class="cell">
+          <span class="k">DPI</span>
+          <span class="v">{m.dpiX}{m.dpiY && m.dpiY !== m.dpiX ? ` × ${m.dpiY}` : ""}</span>
+        </div>
+      {/if}
+      {#if m?.colorProfile}
+        <div class="cell"><span class="k">Farbprofil</span><span class="v">{m.colorProfile}</span></div>
+      {/if}
+      {#if m?.camera}
+        <div class="cell"><span class="k">Kamera</span><span class="v">{m.camera}</span></div>
+      {/if}
+      {#if m?.software}
+        <div class="cell"><span class="k">Software</span><span class="v">{m.software}</span></div>
+      {/if}
+      <div class="cell"><span class="k">Importiert</span><span class="v">{formatDate(item.createdAt)}</span></div>
     </div>
   {/if}
 </div>
@@ -386,7 +417,7 @@
 
   .footline {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 12px;
     padding: 10px 14px;
     background: var(--surface);
