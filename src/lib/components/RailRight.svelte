@@ -29,7 +29,7 @@
         class:active={open}
         title={open ? `${item.title} schließen` : item.title}
         type="button"
-        onclick={() => (open ? (ui.panelOpen = false) : ui.setTool(item.key))}
+        onclick={() => (open ? ui.closeTool() : ui.setTool(item.key))}
       >
         <Icon name={item.name} size={18} />
       </button>

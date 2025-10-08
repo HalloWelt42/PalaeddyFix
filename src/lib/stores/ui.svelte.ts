@@ -11,23 +11,35 @@ class UIStore {
   setTool(tool: ToolKey): void {
     this.activeTool = tool;
     this.panelOpen = true;
-    if (tool !== "contrast") this.contrastMatrixFull = false;
-  }
-
-  toggleContrastMatrixFull(): void {
-    this.contrastMatrixFull = !this.contrastMatrixFull;
+    if (tool === "contrast") {
+      this.activeLeft = "contrast";
+    } else if (this.activeLeft === "contrast") {
+      this.activeLeft = null;
+    }
   }
 
   setLeft(tab: LeftTab | null): void {
     this.activeLeft = tab;
+    if (tab === "contrast") {
+      this.activeTool = "contrast";
+      this.panelOpen = true;
+    } else if (this.activeTool === "contrast") {
+      this.panelOpen = false;
+    }
   }
 
   toggleLeft(tab: LeftTab): void {
-    this.activeLeft = this.activeLeft === tab ? null : tab;
+    this.setLeft(this.activeLeft === tab ? null : tab);
+  }
+
+  closeTool(): void {
+    this.panelOpen = false;
+    if (this.activeTool === "contrast") this.activeLeft = null;
   }
 
   togglePanel(): void {
-    this.panelOpen = !this.panelOpen;
+    if (this.panelOpen) this.closeTool();
+    else this.panelOpen = true;
   }
 
   openSettings(): void {
