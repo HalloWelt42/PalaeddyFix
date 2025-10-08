@@ -233,10 +233,10 @@
     place-items: center;
     text-align: center;
     color: var(--text-dim);
-    background:
-      linear-gradient(var(--surface) 1px, transparent 1px) 0 0 / 24px 24px,
-      linear-gradient(90deg, var(--surface) 1px, transparent 1px) 0 0 / 24px 24px,
-      var(--bg);
+    background-color: var(--bg);
+    background-image: radial-gradient(var(--surface) 1.3px, transparent 1.6px);
+    background-size: 24px 24px;
+    background-position: 0 0;
     transition: border-color 0.15s, color 0.15s;
   }
   .drop.importing {
