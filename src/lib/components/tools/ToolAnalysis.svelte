@@ -10,11 +10,17 @@
   import { palettes } from "../../stores/palettes.svelte";
   import { formatColor, isLight } from "../../analysis/convert";
   import { pickDistinctColors } from "../../analysis/distinct";
+  import { sortColors, SORT_OPTIONS, type SortMode } from "../../analysis/sort";
   import type { CopyFormat, PaletteColor, PaletteSource } from "../../storage/schema";
 
   type TabKey = "frequent" | "rare" | "distinct";
   let activeTab = $state<TabKey>("frequent");
   let distinctCount = $state<number>(8);
+  let sortMode = $state<SortMode>("count");
+
+  function onSortChange(v: SortMode): void {
+    sortMode = v;
+  }
 
   let flash = $state<string | null>(null);
   let flashTimer: ReturnType<typeof setTimeout> | null = null;
@@ -77,14 +83,24 @@
     { value: "named", label: "Named" },
   ];
 
-  const rareSorted = $derived([...analysis.rareColors].slice().reverse());
+  const rareBase = $derived([...analysis.rareColors].slice().reverse());
 
   const distinctPool = $derived.by(() => {
     if (analysis.rareColors.length >= 32) return analysis.rareColors;
     return analysis.colors;
   });
-  const distinctColors = $derived(
+  const distinctBase = $derived(
     distinctPool.length > 0 ? pickDistinctColors(distinctPool, distinctCount) : [],
+  );
+
+  const freqDisplay = $derived(
+    sortMode === "count" ? analysis.colors : sortColors(analysis.colors, sortMode),
+  );
+  const rareDisplay = $derived(
+    sortMode === "count" ? rareBase : sortColors(rareBase, sortMode),
+  );
+  const distinctDisplay = $derived(
+    sortMode === "count" ? distinctBase : sortColors(distinctBase, sortMode),
   );
 
   const currentItem = $derived(gallery.items.find((i) => i.id === selection.id));
@@ -139,6 +155,11 @@
     </button>
   </div>
 
+  <div class="sort-row">
+    <span class="sort-label">Sortierung</span>
+    <Segmented options={SORT_OPTIONS} value={sortMode} onchange={onSortChange} />
+  </div>
+
   {#if activeTab === "distinct"}
     <div class="tab-panel">
       <div class="control-row">
@@ -166,16 +187,16 @@
         </span>
       </div>
 
-      {#if distinctColors.length > 0}
-        <StackedBar colors={distinctColors} />
+      {#if distinctDisplay.length > 0}
+        <StackedBar colors={distinctDisplay} />
         <div class="between">
-          <span class="count">{distinctColors.length} Farben, maximal verschieden</span>
+          <span class="count">{distinctDisplay.length} Farben, maximal verschieden</span>
           <div class="actions">
             <button
               type="button"
               class="save"
               title="Als eigene Palette speichern"
-              onclick={() => void saveAsPalette("manual", distinctColors)}
+              onclick={() => void saveAsPalette("manual", distinctDisplay)}
             >
               <Icon name="star" size={11} /> Speichern
             </button>
@@ -187,7 +208,7 @@
           </div>
         </div>
         <ul class="colors">
-          {#each distinctColors as c, i (i + "-d-" + c.hex)}
+          {#each distinctDisplay as c, i (i + "-d-" + c.hex)}
             <li>
               <button
                 type="button"
@@ -246,16 +267,16 @@
         </span>
       </div>
 
-      {#if analysis.colors.length > 0}
-        <StackedBar colors={analysis.colors} />
+      {#if freqDisplay.length > 0}
+        <StackedBar colors={freqDisplay} />
         <div class="between">
-          <span class="count">{analysis.colors.length} Farben</span>
+          <span class="count">{freqDisplay.length} Farben</span>
           <div class="actions">
             <button
               type="button"
               class="save"
               title="Als eigene Palette speichern"
-              onclick={() => void saveAsPalette("analysis-frequent", analysis.colors)}
+              onclick={() => void saveAsPalette("analysis-frequent", freqDisplay)}
             >
               <Icon name="star" size={11} /> Speichern
             </button>
@@ -267,7 +288,7 @@
           </div>
         </div>
         <ul class="colors">
-          {#each analysis.colors as c, i (i + "-f-" + c.hex)}
+          {#each freqDisplay as c, i (i + "-f-" + c.hex)}
             <li>
               <button
                 type="button"
@@ -320,7 +341,7 @@
       </div>
 
       {#if analysis.rareColors.length > 0}
-        <StackedBar colors={rareSorted} />
+        <StackedBar colors={rareDisplay} />
         <div class="between">
           <span class="count">{analysis.rareColors.length} Farben, aufsteigend</span>
           <div class="actions">
@@ -328,7 +349,7 @@
               type="button"
               class="save"
               title="Als eigene Palette speichern"
-              onclick={() => void saveAsPalette("analysis-rare", rareSorted)}
+              onclick={() => void saveAsPalette("analysis-rare", rareDisplay)}
             >
               <Icon name="star" size={11} /> Speichern
             </button>
@@ -340,7 +361,7 @@
           </div>
         </div>
         <ul class="colors">
-          {#each rareSorted as c, i (i + "-r-" + c.hex)}
+          {#each rareDisplay as c, i (i + "-r-" + c.hex)}
             <li>
               <button
                 type="button"
@@ -439,6 +460,22 @@
     flex-direction: column;
     gap: 12px;
     margin-bottom: 14px;
+  }
+
+  .sort-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+  .sort-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
   }
 
   .control-row {
