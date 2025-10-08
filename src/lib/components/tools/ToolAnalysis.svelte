@@ -7,10 +7,12 @@
   import { analysis } from "../../stores/analysis.svelte";
   import { settings } from "../../stores/settings.svelte";
   import { formatColor, isLight } from "../../analysis/convert";
+  import { pickDistinctColors } from "../../analysis/distinct";
   import type { CopyFormat, PaletteColor } from "../../storage/schema";
 
-  type TabKey = "frequent" | "rare";
+  type TabKey = "frequent" | "rare" | "distinct";
   let activeTab = $state<TabKey>("frequent");
+  let distinctCount = $state<number>(8);
 
   let flash = $state<string | null>(null);
   let flashTimer: ReturnType<typeof setTimeout> | null = null;
@@ -26,9 +28,12 @@
       return;
     }
     void (async () => {
-      const hadCache = await analysis.loadCached(id);
-      if (!hadCache && !analysis.running) {
+      const hadFreq = await analysis.loadCached(id);
+      if (!hadFreq && !analysis.running) {
         await analysis.analyze(id);
+      }
+      if (!analysis.rareCached && !analysis.rareRunning) {
+        await analysis.analyzeRare(id);
       }
     })();
   });
