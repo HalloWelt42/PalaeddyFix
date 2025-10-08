@@ -4,12 +4,12 @@
   import Viewer from "./Viewer.svelte";
   import PaletteGallery from "./PaletteGallery.svelte";
   import ContrastMatrixBig from "./ContrastMatrixBig.svelte";
+  import AppWelcome from "./AppWelcome.svelte";
   import { dropzone } from "../import/dropzone";
   import { ingestFiles } from "../import/fileIntake";
   import { gallery } from "../stores/gallery.svelte";
   import { selection } from "../stores/selection.svelte";
   import { ui } from "../stores/ui.svelte";
-  import { analysis } from "../stores/analysis.svelte";
 
   let fileInput = $state<HTMLInputElement | null>(null);
   let importing = $state<boolean>(false);
@@ -30,6 +30,7 @@
       if (images.length > 0) {
         await gallery.addMany(images);
         await selection.select(images[0].id);
+        ui.setLeft("gallery");
       }
     } finally {
       importing = false;
@@ -50,15 +51,37 @@
 </script>
 
 <main class="main" use:dropzone={{ onFiles: handleFiles }}>
-  {#if ui.activeLeft === "palettes"}
+  {#if ui.activeLeft === "drop"}
+    <div class="drop-wrap">
+      <div class="drop" class:importing>
+        <div class="inner">
+          <div class="glyph">
+            <Icon name="upload" size={36} />
+          </div>
+          <h2>Bilder hier ablegen</h2>
+          <div class="sub">Screenshots, PNG, JPG, WEBP, GIF, BMP -- lokal, ohne Upload.</div>
+          <button class="btn btn-primary" type="button" onclick={openPicker}>
+            Dateien auswählen
+          </button>
+          <div class="hints">
+            <span><kbd>⌘</kbd><kbd>V</kbd> Einfügen</span>
+            <span><kbd>⌘</kbd><kbd>O</kbd> Datei öffnen</span>
+            <span><kbd>⇧</kbd><kbd>⌘</kbd><kbd>4</kbd> Screenshot</span>
+          </div>
+          {#if gallery.items.length > 0}
+            <div class="hint-gallery">
+              {gallery.items.length} Bild{gallery.items.length === 1 ? "" : "er"} in der Galerie -- <button type="button" class="link" onclick={() => ui.setLeft("gallery")}>jetzt öffnen</button>
+            </div>
+          {/if}
+        </div>
+      </div>
+    </div>
+  {:else if ui.activeLeft === "palettes"}
     <PaletteGallery />
   {:else if ui.activeLeft === "contrast"}
     <ContrastMatrixBig />
   {:else if ui.activeLeft === null}
-    <div class="main-empty">
-      <Icon name="droplet" size={48} />
-      <p>Keine Ansicht aktiv. Wähle links eine Ansicht.</p>
-    </div>
+    <AppWelcome onOpenPicker={openPicker} />
   {:else if selection.id}
     <Viewer />
   {:else}
@@ -74,7 +97,7 @@
           <Icon name="search" size={12} />
           <input type="text" placeholder="Suchen ..." bind:value={query} />
         </div>
-        <button class="btn btn-icon" onclick={openPicker} title="Dateien öffnen" type="button">
+        <button class="btn btn-icon" onclick={() => ui.setLeft("drop")} title="Bild öffnen" type="button">
           <Icon name="plus" size={14} />
         </button>
       </div>
@@ -82,22 +105,14 @@
 
     <div class="body">
       {#if gallery.items.length === 0}
-        <div class="drop" class:importing>
-          <div class="inner">
-            <div class="glyph">
-              <Icon name="upload" size={36} />
-            </div>
-            <h2>Bilder hier ablegen</h2>
-            <div class="sub">Screenshots, PNG, JPG, WEBP, GIF, BMP -- lokal, ohne Upload.</div>
-            <button class="btn btn-primary" type="button" onclick={openPicker}>
-              Dateien auswählen
-            </button>
-            <div class="hints">
-              <span><kbd>⌘</kbd><kbd>V</kbd> Einfügen</span>
-              <span><kbd>⌘</kbd><kbd>O</kbd> Datei öffnen</span>
-              <span><kbd>⇧</kbd><kbd>⌘</kbd><kbd>4</kbd> Screenshot</span>
-            </div>
-          </div>
+        <div class="gallery-empty">
+          <Icon name="grid" size={48} />
+          <h3>Noch keine Bilder in der Galerie</h3>
+          <p>
+            Lege hier Screenshots oder Bilder ab, füge per <kbd>⌘</kbd><kbd>V</kbd>
+            aus der Zwischenablage ein, oder
+            <button type="button" class="link" onclick={() => ui.setLeft("drop")}>öffne die Ablage-Fläche</button>.
+          </p>
         </div>
       {:else if visibleItems.length === 0}
         <div class="empty">
@@ -127,21 +142,6 @@
     min-width: 0;
     min-height: 0;
     position: relative;
-  }
-  .main-empty {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    color: var(--text-mute);
-    padding: 40px;
-    text-align: center;
-  }
-  .main-empty p {
-    font-family: var(--font-button);
-    font-size: 14px;
   }
   .main:global(.is-drag-hover)::after {
     content: "";
@@ -221,6 +221,10 @@
     position: relative;
   }
 
+  .drop-wrap {
+    flex: 1;
+    position: relative;
+  }
   .drop {
     position: absolute;
     inset: 20px;
@@ -274,7 +278,7 @@
     letter-spacing: 0.5px;
     margin-top: 24px;
   }
-  .hints kbd {
+  kbd {
     background: var(--surface-2);
     border: 1px solid var(--border-strong);
     padding: 2px 6px;
@@ -283,6 +287,24 @@
     font-family: var(--font-mono);
     font-size: 10px;
     margin-right: 4px;
+  }
+  .hint-gallery {
+    margin-top: 20px;
+    font-size: 12px;
+    font-family: var(--font-button);
+    color: var(--text-dim);
+  }
+  .link {
+    background: none;
+    border: none;
+    color: var(--accent);
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    font: inherit;
+  }
+  .link:hover {
+    color: var(--text);
   }
 
   .empty {
@@ -293,6 +315,32 @@
     color: var(--text-mute);
     font-family: var(--font-mono);
     font-size: 12px;
+  }
+
+  .gallery-empty {
+    max-width: 520px;
+    margin: 60px auto;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    color: var(--text-dim);
+  }
+  .gallery-empty :global(.ic) {
+    color: var(--text-mute);
+  }
+  .gallery-empty h3 {
+    font-family: var(--font-button);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .gallery-empty p {
+    font-family: var(--font-button);
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--text-dim);
   }
 
   .btn {

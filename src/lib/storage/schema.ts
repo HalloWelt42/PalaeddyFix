@@ -38,7 +38,7 @@ export type AnalysisResult = {
 
 export type AlphaMode = "ignore" | "factor";
 export type ThemeMode = "dark" | "light" | "system";
-export type CopyFormat = "hex" | "rgb" | "hsl" | "oklch";
+export type CopyFormat = "hex" | "rgb" | "hsl" | "oklch" | "named";
 
 export type Settings = {
   theme: ThemeMode;

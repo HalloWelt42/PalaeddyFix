@@ -21,23 +21,6 @@
   let freqTimer: ReturnType<typeof setTimeout> | null = null;
   let rareTimer: ReturnType<typeof setTimeout> | null = null;
 
-  $effect(() => {
-    const id = selection.id;
-    if (!id) {
-      analysis.clear();
-      return;
-    }
-    void (async () => {
-      const hadFreq = await analysis.loadCached(id);
-      if (!hadFreq && !analysis.running) {
-        await analysis.analyze(id);
-      }
-      if (!analysis.rareCached && !analysis.rareRunning) {
-        await analysis.analyzeRare(id);
-      }
-    })();
-  });
-
   async function onFrequentCount(e: Event): Promise<void> {
     const v = Number((e.target as HTMLInputElement).value);
     analysis.setColorCount(v);
@@ -89,6 +72,7 @@
     { value: "rgb", label: "RGB" },
     { value: "hsl", label: "HSL" },
     { value: "oklch", label: "OKLCH" },
+    { value: "named", label: "Named" },
   ];
 
   const rareSorted = $derived([...analysis.rareColors].slice().reverse());

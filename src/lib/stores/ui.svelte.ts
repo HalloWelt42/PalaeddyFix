@@ -1,9 +1,9 @@
 export type ToolKey = "analysis" | "palette" | "snap" | "contrast" | "export";
-export type LeftTab = "gallery" | "palettes" | "contrast";
+export type LeftTab = "drop" | "gallery" | "palettes" | "contrast";
 
 class UIStore {
   activeTool = $state<ToolKey>("analysis");
-  activeLeft = $state<LeftTab | null>("gallery");
+  activeLeft = $state<LeftTab | null>("drop");
   panelOpen = $state<boolean>(true);
   settingsOpen = $state<boolean>(false);
   contrastMatrixFull = $state<boolean>(false);

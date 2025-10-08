@@ -1,11 +1,33 @@
 import { hexToRgb, type RGB } from "../analysis/convert";
 import type { Palette } from "./schema";
 
+const tailwindWiki = {
+  url: "https://de.wikipedia.org/wiki/Tailwind_CSS",
+  lang: "de" as const,
+  title: "Wikipedia: Tailwind CSS",
+};
+
+const materialWiki = {
+  url: "https://de.wikipedia.org/wiki/Material_Design",
+  lang: "de" as const,
+  title: "Wikipedia: Material Design",
+};
+
+const cssNamedWiki = {
+  url: "https://de.wikipedia.org/wiki/Webfarbe",
+  lang: "de" as const,
+  title: "Wikipedia: Webfarbe",
+};
+
 function p(
   id: string,
   name: string,
   hexes: string[],
-  meta?: { author?: string; description?: string },
+  meta?: {
+    author?: string;
+    description?: string;
+    wiki?: { url: string; lang: "de" | "en"; title: string };
+  },
 ): Palette {
   const colors: RGB[] = hexes.map((h) => {
     const rgb = hexToRgb(h);
@@ -24,7 +46,14 @@ const solarized = p(
     "#b58900", "#cb4b16", "#dc322f", "#d33682",
     "#6c71c4", "#268bd2", "#2aa198", "#859900",
   ],
-  { author: "Ethan Schoonover" },
+  {
+    author: "Ethan Schoonover",
+    wiki: {
+      url: "https://en.wikipedia.org/wiki/Solarized_(color_scheme)",
+      lang: "en",
+      title: "Wikipedia (EN): Solarized",
+    },
+  },
 );
 
 const dracula = p(
@@ -35,7 +64,14 @@ const dracula = p(
     "#8be9fd", "#50fa7b", "#ffb86c", "#ff79c6",
     "#bd93f9", "#ff5555", "#f1fa8c",
   ],
-  { author: "Zeno Rocha" },
+  {
+    author: "Zeno Rocha",
+    wiki: {
+      url: "https://en.wikipedia.org/wiki/Dracula_(color_scheme)",
+      lang: "en",
+      title: "Wikipedia (EN): Dracula",
+    },
+  },
 );
 
 const nord = p(
@@ -65,7 +101,9 @@ const gruvboxDark = p(
     "#689d6a", "#8ec07c",
     "#d65d0e", "#fe8019",
   ],
-  { author: "Pavel Pertsev" },
+  {
+    author: "Pavel Pertsev",
+  },
 );
 
 const gruvboxLight = p(
@@ -107,7 +145,14 @@ const oneDark = p(
     "#e06c75", "#be5046", "#d19a66", "#e5c07b",
     "#98c379", "#56b6c2", "#61afef", "#c678dd",
   ],
-  { author: "Atom Material" },
+  {
+    author: "Atom Material",
+    wiki: {
+      url: "https://de.wikipedia.org/wiki/Atom_(Texteditor)",
+      lang: "de",
+      title: "Wikipedia: Atom (Texteditor)",
+    },
+  },
 );
 
 const tokyoNight = p(
@@ -171,13 +216,27 @@ const ansi16 = p(
     "#808080", "#ff0000", "#00ff00", "#ffff00",
     "#0000ff", "#ff00ff", "#00ffff", "#ffffff",
   ],
+  {
+    wiki: {
+      url: "https://de.wikipedia.org/wiki/ANSI-Escapesequenz",
+      lang: "de",
+      title: "Wikipedia: ANSI-Escapesequenz",
+    },
+  },
 );
 
 const webSafe = p(
   "web-safe",
   "Web-Safe 216",
   buildWebSafe(),
-  { description: "Alle 216 web-sicheren Farben" },
+  {
+    description: "Alle 216 web-sicheren Farben",
+    wiki: {
+      url: "https://de.wikipedia.org/wiki/Webfarbe",
+      lang: "de",
+      title: "Wikipedia: Webfarbe",
+    },
+  },
 );
 
 function buildWebSafe(): string[] {
@@ -216,6 +275,7 @@ const cssNamed = p(
     "#40e0d0", "#ee82ee", "#f5deb3", "#ffffff", "#f5f5f5", "#ffff00",
     "#9acd32",
   ],
+  { wiki: cssNamedWiki },
 );
 
 function tw(prefix: string, shades: [number, string][]): string[] {
@@ -294,7 +354,10 @@ const tailwindFull = p(
     "#fff1f2", "#ffe4e6", "#fecdd3", "#fda4af", "#fb7185",
     "#f43f5e", "#e11d48", "#be123c", "#9f1239", "#881337", "#4c0519",
   ],
-  { description: "Alle 22 Farbfamilien × 11 Shades + Schwarz/Weiß" },
+  {
+    description: "Alle 22 Farbfamilien × 11 Shades + Schwarz/Weiß",
+    wiki: tailwindWiki,
+  },
 );
 
 const materialFull = p(
@@ -375,7 +438,10 @@ const materialFull = p(
     "#eceff1", "#cfd8dc", "#b0bec5", "#90a4ae", "#78909c", "#607d8b",
     "#546e7a", "#455a64", "#37474f", "#263238",
   ],
-  { description: "Alle 19 Farbfamilien mit allen Shades und Akzentvarianten" },
+  {
+    description: "Alle 19 Farbfamilien mit allen Shades und Akzentvarianten",
+    wiki: materialWiki,
+  },
 );
 
 const palettes: Palette[] = [

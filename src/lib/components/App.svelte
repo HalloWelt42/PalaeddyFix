@@ -13,6 +13,7 @@
   import { settings } from "../stores/settings.svelte";
   import { info } from "../stores/info.svelte";
   import { ui } from "../stores/ui.svelte";
+  import { analysis } from "../stores/analysis.svelte";
   import { installClipboardListener } from "../import/clipboard";
   import { ingestFiles } from "../import/fileIntake";
   import { selection } from "../stores/selection.svelte";
@@ -31,6 +32,7 @@
       if (images.length > 0) {
         await gallery.addMany(images);
         await selection.select(images[0].id);
+        ui.setLeft("gallery");
       }
       input.value = "";
     }
@@ -64,6 +66,23 @@
     }
   }
 
+  $effect(() => {
+    const id = selection.id;
+    if (!id) {
+      analysis.clear();
+      return;
+    }
+    void (async () => {
+      const hadFreq = await analysis.loadCached(id);
+      if (!hadFreq && !analysis.running) {
+        await analysis.analyze(id);
+      }
+      if (!analysis.rareCached && !analysis.rareRunning) {
+        await analysis.analyzeRare(id);
+      }
+    })();
+  });
+
   onMount(() => {
     settings.init();
     info.init();
@@ -74,6 +93,7 @@
       if (images.length > 0) {
         await gallery.addMany(images);
         await selection.select(images[0].id);
+        ui.setLeft("gallery");
       }
     });
 
@@ -86,7 +106,7 @@
 <svelte:window onkeydown={onKey} />
 
 <div class="app">
-  <Header onOpenPicker={openPicker} onOpenDonation={() => (donationOpen = true)} />
+  <Header onOpenDonation={() => (donationOpen = true)} />
   <div class="content" class:panel-closed={!ui.panelOpen}>
     <RailLeft />
     <Main />

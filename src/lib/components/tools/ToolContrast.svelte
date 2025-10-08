@@ -77,6 +77,9 @@
 
   <section class="section">
     <h3>Lesbarkeit auf Weiß / Schwarz</h3>
+    <p class="hint">
+      Wie gut ist jede Bildfarbe als Text auf Weiß oder Schwarz lesbar?
+    </p>
     <ul class="readable">
       {#each shown as c, i (i + "-r-" + c.hex)}
         {@const rw = contrastRatio(c.rgb, WHITE)}
@@ -103,40 +106,11 @@
   </section>
 
   <section class="section">
-    <h3>Kontrastmatrix (kompakt)</h3>
-    <p class="hint-inline">Grosse Matrix-Ansicht: Kontrastmatrix-Tab in der linken Leiste.</p>
-    <div class="matrix-wrap">
-      <table class="matrix">
-        <thead>
-          <tr>
-            <th class="corner"></th>
-            {#each shown as c, ci (ci)}
-              <th class="head-sw"><span class="msw" style="background: {c.hex};"></span></th>
-            {/each}
-          </tr>
-        </thead>
-        <tbody>
-          {#each shown as row, i (i + "-mrow")}
-            <tr>
-              <th class="head-sw"><span class="msw" style="background: {row.hex};"></span></th>
-              {#each shown as col, j (i + "-" + j)}
-                {@const r = i === j ? 0 : contrastRatio(row.rgb, col.rgb)}
-                {@const lv = i === j ? "Fail" : wcagLevel(r)}
-                <td class={i === j ? "diag" : levelClass[lv]} title="{row.hex} / {col.hex} · ΔL {r.toFixed(2)}">
-                  {#if i !== j}
-                    <span class="mrat">{r.toFixed(1)}</span>
-                  {/if}
-                </td>
-              {/each}
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="section">
     <h3>Beste Paare</h3>
+    <p class="hint">
+      Die Farbpaare aus dem Bild mit dem größten Kontrast -- Kandidaten
+      für Text und Hintergrund.
+    </p>
     <ul class="pairs">
       {#each pairs.slice(0, 8) as p, i (i + "-" + p.a.hex + "-" + p.b.hex)}
         <li>
@@ -157,11 +131,14 @@
 
   <section class="section legend-panel sticky-bottom">
     <h3>Stufen nach WCAG 2.1</h3>
+    <p class="hint">
+      Die Mindest-Kontraste nach Standard. AA ist in der EU verpflichtend.
+    </p>
     <ul class="stufen">
-      <li><span class="level lvl-aaa">AAA</span> <b>≥ 7:1</b> Normal-Text, hoechste Stufe</li>
+      <li><span class="level lvl-aaa">AAA</span> <b>≥ 7:1</b> Normal-Text, höchste Stufe</li>
       <li><span class="level lvl-aa">AA</span> <b>≥ 4.5:1</b> Normal-Text, gesetzlicher Standard</li>
-      <li><span class="level lvl-aal">AA Large</span> <b>≥ 3:1</b> Grosstext und UI-Bedienelemente</li>
-      <li><span class="level lvl-ui">UI</span> <b>≥ 1.5:1</b> nur grosse Flaechen, nicht fuer Text</li>
+      <li><span class="level lvl-aal">AA Large</span> <b>≥ 3:1</b> Großtext und UI-Bedienelemente</li>
+      <li><span class="level lvl-ui">UI</span> <b>≥ 1.5:1</b> nur große Flächen, nicht für Text</li>
       <li><span class="level lvl-fail">—</span> <b>&lt; 1.5:1</b> nicht ausreichend</li>
     </ul>
   </section>
@@ -223,6 +200,14 @@
     align-items: center;
   }
 
+  .hint {
+    font-family: var(--font-button);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin: -2px 0 8px;
+  }
   .hint-inline {
     font-family: var(--font-button);
     font-size: 11px;
@@ -319,42 +304,6 @@
     margin-top: 4px;
   }
 
-  .matrix-wrap {
-    overflow: auto;
-    border: 1px solid var(--border);
-  }
-  .matrix {
-    border-collapse: collapse;
-    font-family: var(--font-mono);
-    font-size: 9px;
-  }
-  .matrix th,
-  .matrix td {
-    width: 28px;
-    height: 28px;
-    text-align: center;
-    padding: 0;
-    border: 1px solid var(--border);
-  }
-  .matrix .corner {
-    background: var(--surface-2);
-  }
-  .matrix .head-sw {
-    background: var(--surface-2);
-  }
-  .matrix .msw {
-    display: inline-block;
-    width: 18px;
-    height: 18px;
-    border: 1px solid var(--border-strong);
-  }
-  .matrix .diag {
-    background: repeating-linear-gradient(45deg, var(--surface-2) 0 3px, transparent 3px 6px);
-  }
-  .matrix .mrat {
-    color: var(--text);
-  }
-
   .pairs {
     list-style: none;
     padding: 0;
@@ -413,12 +362,6 @@
   .lvl-aal { background: #eab308; color: #0b0b0d; }
   .lvl-ui { background: #a16207; color: #fff; }
   .lvl-fail { background: #7f1d1d; color: #fff; }
-
-  .matrix td.lvl-aaa { background: rgba(22, 163, 74, 0.45); color: #fff; }
-  .matrix td.lvl-aa { background: rgba(34, 197, 94, 0.35); color: #fff; }
-  .matrix td.lvl-aal { background: rgba(234, 179, 8, 0.3); color: #fff; }
-  .matrix td.lvl-ui { background: rgba(161, 98, 7, 0.3); color: var(--text); }
-  .matrix td.lvl-fail { background: rgba(127, 29, 29, 0.4); color: var(--text-dim); }
 
   .legend-panel .stufen {
     list-style: none;

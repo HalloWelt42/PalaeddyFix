@@ -13,6 +13,7 @@
   };
 
   const top: RailItem[] = [
+    { key: "drop", name: "upload", title: "Bild öffnen / ablegen" },
     { key: "gallery", name: "grid", title: "Galerie", badge: () => String(gallery.items.length) },
     { key: "palettes", name: "palette", title: "Paletten" },
     { key: "contrast", name: "contrast", title: "Kontrastmatrix" },

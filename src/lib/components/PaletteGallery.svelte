@@ -51,7 +51,21 @@
         {#each builtinPalettes as pal (pal.id)}
           <article class="card">
             <header>
-              <h3>{pal.name}</h3>
+              <div class="name-row">
+                <h3>{pal.name}</h3>
+                {#if pal.wiki}
+                  <a
+                    class="wiki-link"
+                    href={pal.wiki.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={pal.wiki.title}
+                  >
+                    <Icon name="info" size={12} />
+                    <span class="wiki-lang">{pal.wiki.lang.toUpperCase()}</span>
+                  </a>
+                {/if}
+              </div>
               {#if pal.author}<span class="author">{pal.author}</span>{/if}
             </header>
             <div class="swatches">
@@ -203,6 +217,32 @@
     font-size: 14px;
     font-weight: 600;
     color: var(--text);
+  }
+  .name-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .wiki-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--text-mute);
+    text-decoration: none;
+    padding: 1px 5px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 0.5px;
+    transition: color 0.12s, border-color 0.12s;
+  }
+  .wiki-link:hover {
+    color: var(--text);
+    border-color: var(--text-dim);
+  }
+  .wiki-lang {
+    font-weight: 700;
   }
   .card .author {
     font-family: var(--font-mono);

@@ -4,11 +4,10 @@
   import type { ThemeMode } from "../storage/schema";
 
   type Props = {
-    onOpenPicker?: () => void;
     onOpenDonation?: () => void;
   };
 
-  const { onOpenPicker, onOpenDonation }: Props = $props();
+  const { onOpenDonation }: Props = $props();
 
   const brand = "PaläddyFix";
   const brandChars: string[] = Array.from(brand);
@@ -54,15 +53,6 @@
   </div>
 
   <div class="header-right">
-    <button
-      class="btn btn-ghost"
-      title="Neues Bild öffnen"
-      type="button"
-      onclick={() => onOpenPicker?.()}
-    >
-      <Icon name="plus" size={14} /> Neu
-    </button>
-    <span class="sep"></span>
     <div class="theme-group" role="group" aria-label="Theme">
       {#each themes as t (t.value)}
         <button
@@ -151,27 +141,6 @@
     display: flex;
     align-items: center;
     gap: 6px;
-  }
-  .btn {
-    background: var(--surface-2);
-    border: 1px solid var(--border-strong);
-    color: var(--text);
-    padding: 6px 12px;
-    font-size: 12px;
-    border-radius: var(--radius-btn);
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .btn-ghost {
-    background: transparent;
-    border-color: transparent;
-    color: var(--text-dim);
-  }
-  .btn-ghost:hover {
-    color: var(--text);
-    background: var(--surface-2);
   }
   .sep {
     width: 1px;

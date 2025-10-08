@@ -70,7 +70,7 @@ export function rgbToOklch(rgb: RGB): OKLCH {
   return [L, C, H];
 }
 
-export type CopyFormat = "hex" | "rgb" | "hsl" | "oklch";
+export type CopyFormat = "hex" | "rgb" | "hsl" | "oklch" | "named";
 
 export function formatRgb(rgb: RGB): string {
   return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
@@ -86,6 +86,13 @@ export function formatOklch(rgb: RGB): string {
   return `oklch(${L.toFixed(3)} ${C.toFixed(3)} ${H.toFixed(1)})`;
 }
 
+import { namedColor } from "../export/namedColors";
+
+export function formatNamed(rgb: RGB): string {
+  const hex = rgbToHex(rgb);
+  return namedColor(hex) ?? hex;
+}
+
 export function formatColor(rgb: RGB, fmt: CopyFormat): string {
   switch (fmt) {
     case "hex":
@@ -96,6 +103,8 @@ export function formatColor(rgb: RGB, fmt: CopyFormat): string {
       return formatHsl(rgb);
     case "oklch":
       return formatOklch(rgb);
+    case "named":
+      return formatNamed(rgb);
   }
 }
 
@@ -143,5 +152,7 @@ export function formatColorA(rgb: RGB, alpha: number, fmt: CopyFormat): string {
       return formatHsla(rgb, alpha);
     case "oklch":
       return formatOklchA(rgb, alpha);
+    case "named":
+      return rgbaToHex8(rgba);
   }
 }

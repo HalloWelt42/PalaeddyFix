@@ -8,12 +8,19 @@
 
   let canvasEl = $state<HTMLCanvasElement | null>(null);
   let wrapperEl = $state<HTMLDivElement | null>(null);
+  let magEl = $state<HTMLCanvasElement | null>(null);
   let hoverRgb = $state<RGB | null>(null);
   let hoverAlpha = $state<number>(255);
   let hoverX = $state<number>(0);
   let hoverY = $state<number>(0);
+  let hoverImgX = $state<number>(0);
+  let hoverImgY = $state<number>(0);
   let flash = $state<string | null>(null);
   let flashTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const MAG_SIZE = 140;
+  const MAG_ZOOM = 12;
+  const MAG_SAMPLES = Math.floor(MAG_SIZE / MAG_ZOOM);
 
   const item = $derived(gallery.items.find((i) => i.id === selection.id));
 
@@ -59,11 +66,82 @@
     const d = ctx.getImageData(x, y, 1, 1).data;
     hoverRgb = [d[0], d[1], d[2]];
     hoverAlpha = d[3];
+    hoverImgX = x;
+    hoverImgY = y;
     const wrapRect = wrapperEl?.getBoundingClientRect();
     if (wrapRect) {
       hoverX = e.clientX - wrapRect.left;
       hoverY = e.clientY - wrapRect.top;
     }
+    drawMagnifier();
+  }
+
+  function drawMagnifier(): void {
+    const src = canvasEl;
+    const mag = magEl;
+    if (!src || !mag) return;
+    const mctx = mag.getContext("2d");
+    if (!mctx) return;
+    if (mag.width !== MAG_SIZE) {
+      mag.width = MAG_SIZE;
+      mag.height = MAG_SIZE;
+    }
+    mctx.imageSmoothingEnabled = false;
+    mctx.clearRect(0, 0, MAG_SIZE, MAG_SIZE);
+    const half = Math.floor(MAG_SAMPLES / 2);
+    const sx = hoverImgX - half;
+    const sy = hoverImgY - half;
+    mctx.save();
+    mctx.beginPath();
+    mctx.arc(MAG_SIZE / 2, MAG_SIZE / 2, MAG_SIZE / 2 - 2, 0, Math.PI * 2);
+    mctx.clip();
+    mctx.fillStyle = "#0a0a0c";
+    mctx.fillRect(0, 0, MAG_SIZE, MAG_SIZE);
+    mctx.drawImage(
+      src,
+      sx,
+      sy,
+      MAG_SAMPLES,
+      MAG_SAMPLES,
+      0,
+      0,
+      MAG_SIZE,
+      MAG_SIZE,
+    );
+    mctx.restore();
+
+    const cx = MAG_SIZE / 2;
+    const cy = MAG_SIZE / 2;
+    const pix = MAG_ZOOM;
+
+    mctx.lineWidth = 2;
+    mctx.strokeStyle = "rgba(0, 0, 0, 0.85)";
+    mctx.strokeRect(cx - pix / 2, cy - pix / 2, pix, pix);
+    mctx.lineWidth = 1;
+    mctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+    mctx.strokeRect(cx - pix / 2 + 0.5, cy - pix / 2 + 0.5, pix - 1, pix - 1);
+
+    mctx.beginPath();
+    mctx.moveTo(cx - pix, cy);
+    mctx.lineTo(cx - pix / 2 - 2, cy);
+    mctx.moveTo(cx + pix / 2 + 2, cy);
+    mctx.lineTo(cx + pix, cy);
+    mctx.moveTo(cx, cy - pix);
+    mctx.lineTo(cx, cy - pix / 2 - 2);
+    mctx.moveTo(cx, cy + pix / 2 + 2);
+    mctx.lineTo(cx, cy + pix);
+    mctx.lineWidth = 2;
+    mctx.strokeStyle = "rgba(0, 0, 0, 0.85)";
+    mctx.stroke();
+    mctx.lineWidth = 1;
+    mctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+    mctx.stroke();
+
+    mctx.lineWidth = 2;
+    mctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+    mctx.beginPath();
+    mctx.arc(cx, cy, MAG_SIZE / 2 - 2, 0, Math.PI * 2);
+    mctx.stroke();
   }
 
   function onCanvasLeave(): void {
@@ -128,19 +206,29 @@
       onclick={onCanvasClick}
     ></canvas>
     {#if hoverRgb}
+      {@const offX = hoverX > 220 ? -(MAG_SIZE + 16) : 16}
+      {@const offY = hoverY > 220 ? -(MAG_SIZE + 16) : 16}
       <div
-        class="dropper"
-        style="left:{hoverX + 16}px; top:{hoverY + 16}px;"
+        class="picker"
+        style="left:{hoverX + offX}px; top:{hoverY + offY}px;"
       >
-        <div class="swatch-wrap">
-          <div class="swatch" style="background: {hoverHex}; opacity: {hoverAlpha / 255};"></div>
-        </div>
+        <canvas
+          class="mag"
+          bind:this={magEl}
+          width={MAG_SIZE}
+          height={MAG_SIZE}
+          style="width: {MAG_SIZE}px; height: {MAG_SIZE}px;"
+        ></canvas>
         <div class="vals">
+          <div class="swatch-wrap">
+            <div class="swatch" style="background: {hoverHex}; opacity: {hoverAlpha / 255};"></div>
+          </div>
           <div class="hex">{hoverHex}</div>
           <div class="out">{hoverOut}</div>
           {#if hasAlpha(hoverAlpha)}
             <div class="alpha">α {hoverAlphaPct} %</div>
           {/if}
+          <div class="xy">{hoverImgX}, {hoverImgY}</div>
         </div>
       </div>
     {/if}
@@ -216,43 +304,49 @@
     box-shadow: 0 8px 32px #0006;
   }
 
-  .dropper {
+  .picker {
     position: absolute;
+    pointer-events: none;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    z-index: 4;
+  }
+  .mag {
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 2px rgba(255, 255, 255, 0.85),
+      0 0 0 3px rgba(0, 0, 0, 0.6),
+      0 8px 24px #000c;
+    background: #0a0a0c;
+  }
+  .vals {
     background: var(--surface);
     border: 1px solid var(--border-strong);
-    padding: 6px;
+    padding: 6px 8px;
     display: flex;
-    align-items: center;
-    gap: 8px;
-    pointer-events: none;
+    flex-direction: column;
+    gap: 3px;
     box-shadow: 0 4px 16px #0008;
+    min-width: 110px;
   }
   .swatch-wrap {
-    width: 32px;
-    height: 32px;
+    width: 100%;
+    height: 16px;
     background-image:
       linear-gradient(45deg, rgba(255, 255, 255, 0.12) 25%, transparent 25%),
       linear-gradient(-45deg, rgba(255, 255, 255, 0.12) 25%, transparent 25%),
       linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.12) 75%),
       linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.12) 75%);
-    background-size: 10px 10px;
-    background-position: 0 0, 0 5px, 5px -5px, -5px 0;
+    background-size: 8px 8px;
+    background-position: 0 0, 0 4px, 4px -4px, -4px 0;
     background-color: #1a1a20;
     border: 1px solid var(--border-strong);
+    margin-bottom: 2px;
   }
   .swatch {
     width: 100%;
     height: 100%;
-  }
-  .alpha {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-dim);
-  }
-  .vals {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
   }
   .hex {
     font-family: var(--font-mono);
@@ -264,6 +358,13 @@
     font-family: var(--font-mono);
     font-size: 10px;
     color: var(--text-dim);
+    word-break: break-all;
+  }
+  .alpha,
+  .xy {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-mute);
   }
 
   .flash {
