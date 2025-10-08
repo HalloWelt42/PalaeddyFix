@@ -6,11 +6,7 @@ export type Palette = {
   author?: string;
   description?: string;
   colors: RGB[];
-  wiki?: {
-    url: string;
-    lang: "de" | "en";
-    title: string;
-  };
+  infoTopic?: string;
 };
 
 export type PaletteMatch = {

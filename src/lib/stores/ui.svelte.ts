@@ -1,5 +1,5 @@
 export type ToolKey = "analysis" | "palette" | "snap" | "contrast" | "export";
-export type LeftTab = "drop" | "gallery" | "palettes" | "contrast";
+export type LeftTab = "drop" | "gallery" | "palettes" | "contrast" | "info";
 
 class UIStore {
   activeTool = $state<ToolKey>("analysis");

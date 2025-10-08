@@ -1,5 +1,7 @@
 <script lang="ts">
   import Icon from "./ui/Icon.svelte";
+  import InfoLink from "./ui/InfoLink.svelte";
+  import PromptModal from "./ui/PromptModal.svelte";
   import { listBuiltinPalettes } from "../palettes/builtin";
   import { rgbToHex } from "../analysis/convert";
   import { palettes } from "../stores/palettes.svelte";
@@ -24,14 +26,54 @@
     }),
   );
 
-  async function onRename(id: string, current: string): Promise<void> {
-    const name = window.prompt("Neuer Name", current);
-    if (name && name.trim()) await palettes.rename(id, name.trim());
+  const GROUP_ORDER: PaletteSource[] = [
+    "analysis-frequent",
+    "analysis-rare",
+    "manual",
+    "snapshot",
+  ];
+
+  const ownGrouped = $derived.by(() => {
+    const map = new Map<PaletteSource, typeof ownSorted>();
+    for (const source of GROUP_ORDER) map.set(source, []);
+    for (const pal of ownSorted) {
+      const arr = map.get(pal.source) ?? [];
+      arr.push(pal);
+      map.set(pal.source, arr);
+    }
+    return GROUP_ORDER
+      .map((source) => ({ source, label: sourceLabel[source], items: map.get(source) ?? [] }))
+      .filter((g) => g.items.length > 0);
+  });
+
+  let renameOpen = $state<boolean>(false);
+  let renameId = $state<string>("");
+  let renameInitial = $state<string>("");
+
+  let deleteOpen = $state<boolean>(false);
+  let deleteId = $state<string>("");
+  let deleteMessage = $state<string>("");
+
+  function onRename(id: string, current: string): void {
+    renameId = id;
+    renameInitial = current;
+    renameOpen = true;
   }
 
-  async function onDelete(id: string, name: string): Promise<void> {
-    if (!window.confirm(`Palette "${name}" wirklich löschen?`)) return;
-    await palettes.remove(id);
+  async function confirmRename(value: string): Promise<void> {
+    if (value) await palettes.rename(renameId, value);
+    renameOpen = false;
+  }
+
+  function onDelete(id: string, name: string): void {
+    deleteId = id;
+    deleteMessage = `Palette „${name}" unwiderruflich löschen?`;
+    deleteOpen = true;
+  }
+
+  async function confirmDelete(): Promise<void> {
+    await palettes.remove(deleteId);
+    deleteOpen = false;
   }
 
   function formatDate(ts: number): string {
@@ -84,19 +126,13 @@
           <article class="card">
             <header>
               <div class="name-row">
-                <h3>{pal.name}</h3>
-                {#if pal.wiki}
-                  <a
-                    class="wiki-link"
-                    href={pal.wiki.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={pal.wiki.title}
-                  >
-                    <Icon name="info" size={12} />
-                    <span class="wiki-lang">{pal.wiki.lang.toUpperCase()}</span>
-                  </a>
-                {/if}
+                <h3>
+                  {#if pal.infoTopic}
+                    <InfoLink topic={pal.infoTopic}>{pal.name}</InfoLink>
+                  {:else}
+                    {pal.name}
+                  {/if}
+                </h3>
               </div>
               {#if pal.author}<span class="author">{pal.author}</span>{/if}
             </header>
@@ -126,11 +162,18 @@
       </div>
     {:else}
       <p class="intro">
-        Selbst gespeicherte Paletten. Gepinnte stehen oben. Klick auf den
-        Stift benennt um, das Stern-Icon pinnt, der Mülleimer löscht.
+        Selbst gespeicherte Paletten, gruppiert nach Analyse-Typ. Gepinnte
+        stehen innerhalb der Gruppe oben. Klick auf den Stift benennt um,
+        das Stern-Icon pinnt, der Mülleimer löscht.
       </p>
-      <div class="grid">
-        {#each ownSorted as pal (pal.id)}
+      {#each ownGrouped as g (g.source)}
+        <section class="own-group">
+          <h2 class="group-head">
+            <span>{g.label}</span>
+            <span class="group-count">{g.items.length}</span>
+          </h2>
+          <div class="grid">
+            {#each g.items as pal (pal.id)}
           <article class="card" class:pinned={pal.pinned}>
             <header>
               <div class="name-row">
@@ -174,11 +217,34 @@
               <span class="desc">{formatDate(pal.createdAt)}</span>
             </footer>
           </article>
-        {/each}
-      </div>
+            {/each}
+          </div>
+        </section>
+      {/each}
     {/if}
   </div>
 </div>
+
+<PromptModal
+  open={renameOpen}
+  title="Palette umbenennen"
+  label="Name"
+  defaultValue={renameInitial}
+  confirmLabel="Umbenennen"
+  onConfirm={confirmRename}
+  onCancel={() => (renameOpen = false)}
+/>
+
+<PromptModal
+  open={deleteOpen}
+  title="Palette löschen?"
+  mode="confirm"
+  message={deleteMessage}
+  danger={true}
+  confirmLabel="Löschen"
+  onConfirm={confirmDelete}
+  onCancel={() => (deleteOpen = false)}
+/>
 
 <style>
   .pal-gallery {
@@ -271,6 +337,31 @@
     max-width: 780px;
   }
 
+  .own-group {
+    margin-bottom: 18px;
+  }
+  .group-head {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-button);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 0 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+    width: 100%;
+  }
+  .group-count {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-mute);
+    font-weight: 500;
+    letter-spacing: 0;
+  }
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -304,27 +395,6 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-  }
-  .wiki-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    color: var(--text-mute);
-    text-decoration: none;
-    padding: 1px 5px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    font-family: var(--font-mono);
-    font-size: 8px;
-    letter-spacing: 0.5px;
-    transition: color 0.12s, border-color 0.12s;
-  }
-  .wiki-link:hover {
-    color: var(--text);
-    border-color: var(--text-dim);
-  }
-  .wiki-lang {
-    font-weight: 700;
   }
   .src {
     font-family: var(--font-mono);

@@ -5,6 +5,7 @@
   import PaletteGallery from "./PaletteGallery.svelte";
   import ContrastMatrixBig from "./ContrastMatrixBig.svelte";
   import AppWelcome from "./AppWelcome.svelte";
+  import InfoLexicon from "./InfoLexicon.svelte";
   import { dropzone } from "../import/dropzone";
   import { ingestFiles } from "../import/fileIntake";
   import { gallery } from "../stores/gallery.svelte";
@@ -80,6 +81,8 @@
     <PaletteGallery />
   {:else if ui.activeLeft === "contrast"}
     <ContrastMatrixBig />
+  {:else if ui.activeLeft === "info"}
+    <InfoLexicon />
   {:else if ui.activeLeft === null}
     <AppWelcome onOpenPicker={openPicker} />
   {:else if selection.id}

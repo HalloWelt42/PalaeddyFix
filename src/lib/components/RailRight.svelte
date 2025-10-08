@@ -3,7 +3,6 @@
   import type { IconName } from "./ui/Icon.svelte";
   import { ui } from "../stores/ui.svelte";
   import type { ToolKey } from "../stores/ui.svelte";
-  import { info } from "../stores/info.svelte";
 
   type RailItem = {
     key: ToolKey;
@@ -35,17 +34,7 @@
       </button>
     {/each}
   </div>
-  <div class="group">
-    <button
-      class="rail-btn info-btn"
-      class:active={info.open}
-      title={info.open ? "Info schließen" : "Info öffnen"}
-      type="button"
-      onclick={() => (info.open ? info.close() : info.show(info.topicKey ?? "median-cut"))}
-    >
-      <Icon name="info" size={18} />
-    </button>
-  </div>
+  <div class="group"></div>
 </aside>
 
 <style>
@@ -92,19 +81,5 @@
     bottom: 8px;
     width: 2px;
     background: var(--accent);
-  }
-  .info-btn {
-    color: var(--info);
-  }
-  .info-btn:hover {
-    color: var(--info);
-    background: var(--info-soft);
-  }
-  .info-btn.active {
-    color: var(--info);
-    background: var(--info-soft);
-  }
-  .info-btn.active::after {
-    background: var(--info);
   }
 </style>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { info } from "../../stores/info.svelte";
+  import { ui } from "../../stores/ui.svelte";
   import Icon from "./Icon.svelte";
   import type { Snippet } from "svelte";
 
@@ -13,7 +14,9 @@
   function open(e: Event): void {
     e.preventDefault();
     e.stopPropagation();
-    info.show(topic);
+    info.select(topic);
+    info.setQuery("");
+    ui.setLeft("info");
   }
 </script>
 

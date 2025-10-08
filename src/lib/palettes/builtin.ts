@@ -1,24 +1,6 @@
 import { hexToRgb, type RGB } from "../analysis/convert";
 import type { Palette } from "./schema";
 
-const tailwindWiki = {
-  url: "https://de.wikipedia.org/wiki/Tailwind_CSS",
-  lang: "de" as const,
-  title: "Wikipedia: Tailwind CSS",
-};
-
-const materialWiki = {
-  url: "https://de.wikipedia.org/wiki/Material_Design",
-  lang: "de" as const,
-  title: "Wikipedia: Material Design",
-};
-
-const cssNamedWiki = {
-  url: "https://de.wikipedia.org/wiki/Webfarbe",
-  lang: "de" as const,
-  title: "Wikipedia: Webfarbe",
-};
-
 function p(
   id: string,
   name: string,
@@ -26,7 +8,7 @@ function p(
   meta?: {
     author?: string;
     description?: string;
-    wiki?: { url: string; lang: "de" | "en"; title: string };
+    infoTopic?: string;
   },
 ): Palette {
   const colors: RGB[] = hexes.map((h) => {
@@ -46,14 +28,7 @@ const solarized = p(
     "#b58900", "#cb4b16", "#dc322f", "#d33682",
     "#6c71c4", "#268bd2", "#2aa198", "#859900",
   ],
-  {
-    author: "Ethan Schoonover",
-    wiki: {
-      url: "https://en.wikipedia.org/wiki/Solarized_(color_scheme)",
-      lang: "en",
-      title: "Wikipedia (EN): Solarized",
-    },
-  },
+  { author: "Ethan Schoonover", infoTopic: "palette-solarized" },
 );
 
 const dracula = p(
@@ -64,14 +39,7 @@ const dracula = p(
     "#8be9fd", "#50fa7b", "#ffb86c", "#ff79c6",
     "#bd93f9", "#ff5555", "#f1fa8c",
   ],
-  {
-    author: "Zeno Rocha",
-    wiki: {
-      url: "https://en.wikipedia.org/wiki/Dracula_(color_scheme)",
-      lang: "en",
-      title: "Wikipedia (EN): Dracula",
-    },
-  },
+  { author: "Zeno Rocha", infoTopic: "palette-dracula" },
 );
 
 const nord = p(
@@ -145,14 +113,7 @@ const oneDark = p(
     "#e06c75", "#be5046", "#d19a66", "#e5c07b",
     "#98c379", "#56b6c2", "#61afef", "#c678dd",
   ],
-  {
-    author: "Atom Material",
-    wiki: {
-      url: "https://de.wikipedia.org/wiki/Atom_(Texteditor)",
-      lang: "de",
-      title: "Wikipedia: Atom (Texteditor)",
-    },
-  },
+  { author: "Atom Material", infoTopic: "palette-one-dark" },
 );
 
 const tokyoNight = p(
@@ -216,27 +177,14 @@ const ansi16 = p(
     "#808080", "#ff0000", "#00ff00", "#ffff00",
     "#0000ff", "#ff00ff", "#00ffff", "#ffffff",
   ],
-  {
-    wiki: {
-      url: "https://de.wikipedia.org/wiki/ANSI-Escapesequenz",
-      lang: "de",
-      title: "Wikipedia: ANSI-Escapesequenz",
-    },
-  },
+  { infoTopic: "palette-ansi" },
 );
 
 const webSafe = p(
   "web-safe",
   "Web-Safe 216",
   buildWebSafe(),
-  {
-    description: "Alle 216 web-sicheren Farben",
-    wiki: {
-      url: "https://de.wikipedia.org/wiki/Webfarbe",
-      lang: "de",
-      title: "Wikipedia: Webfarbe",
-    },
-  },
+  { description: "Alle 216 web-sicheren Farben", infoTopic: "palette-web" },
 );
 
 function buildWebSafe(): string[] {
@@ -275,7 +223,7 @@ const cssNamed = p(
     "#40e0d0", "#ee82ee", "#f5deb3", "#ffffff", "#f5f5f5", "#ffff00",
     "#9acd32",
   ],
-  { wiki: cssNamedWiki },
+  { infoTopic: "palette-web" },
 );
 
 function tw(prefix: string, shades: [number, string][]): string[] {
@@ -356,7 +304,7 @@ const tailwindFull = p(
   ],
   {
     description: "Alle 22 Farbfamilien × 11 Shades + Schwarz/Weiß",
-    wiki: tailwindWiki,
+    infoTopic: "palette-tailwind",
   },
 );
 
@@ -440,7 +388,7 @@ const materialFull = p(
   ],
   {
     description: "Alle 19 Farbfamilien mit allen Shades und Akzentvarianten",
-    wiki: materialWiki,
+    infoTopic: "palette-material",
   },
 );
 

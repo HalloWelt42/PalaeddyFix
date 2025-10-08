@@ -7,7 +7,6 @@
   import Main from "./Main.svelte";
   import Panel from "./Panel.svelte";
   import SettingsModal from "./SettingsModal.svelte";
-  import InfoPanel from "./InfoPanel.svelte";
   import DonationOverlay from "./DonationOverlay.svelte";
   import { gallery } from "../stores/gallery.svelte";
   import { settings } from "../stores/settings.svelte";
@@ -57,8 +56,8 @@
         ui.closeSettings();
         return;
       }
-      if (info.open) {
-        info.close();
+      if (ui.activeLeft === "info") {
+        ui.setLeft(null);
         return;
       }
       if (selection.id) {
@@ -119,7 +118,6 @@
   </div>
   <Footer />
   <SettingsModal />
-  <InfoPanel />
   <DonationOverlay open={donationOpen} onClose={() => (donationOpen = false)} />
 
   <input

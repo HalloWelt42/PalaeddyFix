@@ -38,6 +38,15 @@
   </div>
   <div class="group">
     <button
+      class="rail-btn info-btn"
+      class:active={ui.activeLeft === "info"}
+      title={ui.activeLeft === "info" ? "Info-Lexikon schließen" : "Info-Lexikon öffnen"}
+      type="button"
+      onclick={() => ui.toggleLeft("info")}
+    >
+      <Icon name="info" size={18} />
+    </button>
+    <button
       class="rail-btn"
       title="Einstellungen"
       type="button"
@@ -106,5 +115,19 @@
     min-width: 14px;
     text-align: center;
     line-height: 1.2;
+  }
+  .info-btn {
+    color: var(--info);
+  }
+  .info-btn:hover {
+    color: var(--info);
+    background: var(--info-soft);
+  }
+  .info-btn.active {
+    color: var(--info);
+    background: var(--info-soft);
+  }
+  .info-btn.active::after {
+    background: var(--info);
   }
 </style>

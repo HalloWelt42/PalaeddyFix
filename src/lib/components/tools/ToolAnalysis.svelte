@@ -3,6 +3,7 @@
   import StackedBar from "../ui/StackedBar.svelte";
   import Segmented from "../ui/Segmented.svelte";
   import InfoLink from "../ui/InfoLink.svelte";
+  import PromptModal from "../ui/PromptModal.svelte";
   import { selection } from "../../stores/selection.svelte";
   import { analysis } from "../../stores/analysis.svelte";
   import { settings } from "../../stores/settings.svelte";
@@ -12,6 +13,7 @@
   import { pickDistinctColors } from "../../analysis/distinct";
   import { sortColors, SORT_OPTIONS, type SortMode } from "../../analysis/sort";
   import { computeZones, type Zone } from "../../analysis/zonal";
+  import { dedupePerceptually } from "../../analysis/dedupe";
   import { rgbToHex } from "../../analysis/convert";
   import { getImage } from "../../storage/db";
   import type { CopyFormat, PaletteColor, PaletteSource } from "../../storage/schema";
@@ -152,11 +154,28 @@
     return base;
   }
 
-  async function saveAsPalette(source: PaletteSource, colors: PaletteColor[]): Promise<void> {
+  let saveOpen = $state<boolean>(false);
+  let saveDefault = $state<string>("");
+  let pendingSource = $state<PaletteSource>("manual");
+  let pendingColors = $state<PaletteColor[]>([]);
+
+  function saveAsPalette(source: PaletteSource, colors: PaletteColor[]): void {
     if (colors.length === 0) return;
-    const name = window.prompt("Palettenname", defaultPaletteName(source));
-    if (!name || !name.trim()) return;
-    await palettes.saveFromColors(name.trim(), colors, source, selection.id ?? undefined);
+    pendingSource = source;
+    pendingColors = colors;
+    saveDefault = defaultPaletteName(source);
+    saveOpen = true;
+  }
+
+  async function confirmSave(name: string): Promise<void> {
+    saveOpen = false;
+    if (!name.trim()) return;
+    await palettes.saveFromColors(
+      name.trim(),
+      pendingColors,
+      pendingSource,
+      selection.id ?? undefined,
+    );
     showFlash(`Palette "${name.trim()}" gespeichert`);
   }
 </script>
@@ -223,12 +242,18 @@
         <span class="n">{zonalGrid}×{zonalGrid}</span>
       </div>
 
+      <p class="hint-inline">
+        <InfoLink topic="zonal">Zonale Analyse</InfoLink>: Bild in {zonalGrid}×{zonalGrid}
+        Zellen geteilt, pro Zelle der Farbdurchschnitt -- zeigt räumliche
+        Verteilung der Farben.
+      </p>
+
       <div class="status-bar">
         <span class="status-label">
           {#if zonalRunning}
             Berechne …
           {:else if zones.length > 0}
-            Bild in {zonalGrid}×{zonalGrid} Zonen geteilt, je ein Durchschnitt
+            {zones.length} Zonen, gespeichert wird nach Delta E entdupliziert
           {:else}
             Erst ein Bild auswählen
           {/if}
@@ -238,7 +263,7 @@
       {#if zones.length > 0}
         <div
           class="zonal-grid"
-          style="grid-template-columns: repeat({zonalGrid}, 1fr);"
+          style="--zonal-grid: {zonalGrid}; grid-template-columns: repeat({zonalGrid}, 1fr); grid-template-rows: repeat({zonalGrid}, 1fr);"
         >
           {#each zones as z, i (i + "-" + z.x + "-" + z.y)}
             {@const hex = rgbToHex(z.rgb)}
@@ -253,14 +278,15 @@
           {/each}
         </div>
 
+        {@const zonalDedup = dedupePerceptually(zonalPalette, 3)}
         <div class="between">
-          <span class="count">{zones.length} Zonen</span>
+          <span class="count">{zones.length} Zonen → {zonalDedup.length} Farben</span>
           <div class="actions">
             <button
               type="button"
               class="save"
-              title="Alle Zonenfarben als Palette speichern"
-              onclick={() => void saveAsPalette("manual", zonalPalette)}
+              title="Deduplizierte Zonenfarben als Palette speichern"
+              onclick={() => void saveAsPalette("manual", zonalDedup)}
             >
               <Icon name="star" size={11} /> Speichern
             </button>
@@ -508,10 +534,20 @@
 
   {#if flash}
     <div class="flash">
-      <Icon name="check" size={12} /> Kopiert: {flash}
+      <Icon name="check" size={12} /> {flash}
     </div>
   {/if}
 {/if}
+
+<PromptModal
+  open={saveOpen}
+  title="Palette speichern"
+  label="Name"
+  defaultValue={saveDefault}
+  confirmLabel="Speichern"
+  onConfirm={confirmSave}
+  onCancel={() => (saveOpen = false)}
+/>
 
 <style>
   .empty {
@@ -572,13 +608,19 @@
 
   .zonal-grid {
     display: grid;
+    width: 100%;
+    aspect-ratio: 1 / 1;
     gap: 1px;
     background: var(--border);
     border: 1px solid var(--border);
     margin-bottom: 8px;
+    box-sizing: border-box;
   }
   .zone {
-    aspect-ratio: 1 / 1;
+    min-width: 0;
+    min-height: 0;
+    width: 100%;
+    height: 100%;
     border: 0;
     padding: 0;
     cursor: pointer;

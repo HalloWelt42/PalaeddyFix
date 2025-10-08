@@ -8,12 +8,35 @@ import {
 class InfoStore {
   open = $state<boolean>(false);
   topicKey = $state<string | null>(null);
+  query = $state<string>("");
+  matchIndex = $state<number>(0);
   x = $state<number>(DEFAULT_INFO_PANEL.x);
   y = $state<number>(DEFAULT_INFO_PANEL.y);
   width = $state<number>(DEFAULT_INFO_PANEL.width);
   height = $state<number>(DEFAULT_INFO_PANEL.height);
   minimized = $state<boolean>(false);
   maximized = $state<boolean>(false);
+
+  select(key: string | null): void {
+    this.topicKey = key;
+    this.matchIndex = 0;
+    this.save();
+  }
+
+  setQuery(q: string): void {
+    this.query = q;
+    this.matchIndex = 0;
+  }
+
+  nextMatch(total: number): void {
+    if (total <= 0) return;
+    this.matchIndex = (this.matchIndex + 1) % total;
+  }
+
+  prevMatch(total: number): void {
+    if (total <= 0) return;
+    this.matchIndex = (this.matchIndex - 1 + total) % total;
+  }
 
   init(): void {
     const p = loadInfoPanel();
