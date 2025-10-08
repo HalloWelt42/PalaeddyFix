@@ -11,12 +11,52 @@
   import { formatColor, isLight } from "../../analysis/convert";
   import { pickDistinctColors } from "../../analysis/distinct";
   import { sortColors, SORT_OPTIONS, type SortMode } from "../../analysis/sort";
+  import { computeZones, type Zone } from "../../analysis/zonal";
+  import { rgbToHex } from "../../analysis/convert";
+  import { getImage } from "../../storage/db";
   import type { CopyFormat, PaletteColor, PaletteSource } from "../../storage/schema";
 
-  type TabKey = "frequent" | "rare" | "distinct";
+  type TabKey = "frequent" | "rare" | "distinct" | "zonal";
   let activeTab = $state<TabKey>("frequent");
   let distinctCount = $state<number>(8);
   let sortMode = $state<SortMode>("count");
+  let zonalGrid = $state<number>(8);
+  let zones = $state<Zone[]>([]);
+  let zonalRunning = $state<boolean>(false);
+  let zonalImageId = $state<string | null>(null);
+
+  $effect(() => {
+    const id = selection.id;
+    const grid = zonalGrid;
+    if (!id) {
+      zones = [];
+      zonalImageId = null;
+      return;
+    }
+    void (async () => {
+      zonalRunning = true;
+      try {
+        const img = await getImage(id);
+        if (!img) return;
+        const result = await computeZones(img.blob, grid);
+        zones = result;
+        zonalImageId = id;
+      } catch {
+        zones = [];
+      } finally {
+        zonalRunning = false;
+      }
+    })();
+  });
+
+  const zonalPalette = $derived<PaletteColor[]>(
+    zones.map((z) => ({
+      rgb: z.rgb,
+      hex: rgbToHex(z.rgb),
+      count: 1,
+      percent: 100 / Math.max(1, zones.length),
+    })),
+  );
 
   function onSortChange(v: SortMode): void {
     sortMode = v;
@@ -153,6 +193,14 @@
     >
       Kontrastreich
     </button>
+    <button
+      type="button"
+      class="tab"
+      class:active={activeTab === "zonal"}
+      onclick={() => (activeTab = "zonal")}
+    >
+      Zonal
+    </button>
   </div>
 
   <div class="sort-row">
@@ -160,7 +208,67 @@
     <Segmented options={SORT_OPTIONS} value={sortMode} onchange={onSortChange} />
   </div>
 
-  {#if activeTab === "distinct"}
+  {#if activeTab === "zonal"}
+    <div class="tab-panel">
+      <div class="control-row">
+        <label class="k" for="cc-zonal">Raster</label>
+        <input
+          id="cc-zonal"
+          type="range"
+          min="2"
+          max="24"
+          step="1"
+          bind:value={zonalGrid}
+        />
+        <span class="n">{zonalGrid}×{zonalGrid}</span>
+      </div>
+
+      <div class="status-bar">
+        <span class="status-label">
+          {#if zonalRunning}
+            Berechne …
+          {:else if zones.length > 0}
+            Bild in {zonalGrid}×{zonalGrid} Zonen geteilt, je ein Durchschnitt
+          {:else}
+            Erst ein Bild auswählen
+          {/if}
+        </span>
+      </div>
+
+      {#if zones.length > 0}
+        <div
+          class="zonal-grid"
+          style="grid-template-columns: repeat({zonalGrid}, 1fr);"
+        >
+          {#each zones as z, i (i + "-" + z.x + "-" + z.y)}
+            {@const hex = rgbToHex(z.rgb)}
+            <button
+              type="button"
+              class="zone"
+              style="background: {hex};"
+              title={hex}
+              onclick={() => copyColor({ rgb: z.rgb, hex, count: 1, percent: 0 })}
+              aria-label={`Zone ${z.x + 1}/${z.y + 1}: ${hex}`}
+            ></button>
+          {/each}
+        </div>
+
+        <div class="between">
+          <span class="count">{zones.length} Zonen</span>
+          <div class="actions">
+            <button
+              type="button"
+              class="save"
+              title="Alle Zonenfarben als Palette speichern"
+              onclick={() => void saveAsPalette("manual", zonalPalette)}
+            >
+              <Icon name="star" size={11} /> Speichern
+            </button>
+          </div>
+        </div>
+      {/if}
+    </div>
+  {:else if activeTab === "distinct"}
     <div class="tab-panel">
       <div class="control-row">
         <label class="k" for="cc-dist">Anzahl</label>
@@ -428,7 +536,7 @@
 
   .tabs {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
     gap: 0;
     border-bottom: 1px solid var(--border-strong);
     margin-bottom: 14px;
@@ -460,6 +568,28 @@
     flex-direction: column;
     gap: 12px;
     margin-bottom: 14px;
+  }
+
+  .zonal-grid {
+    display: grid;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .zone {
+    aspect-ratio: 1 / 1;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    transition: outline-color 0.12s;
+    outline: 1px solid transparent;
+    outline-offset: -1px;
+  }
+  .zone:hover {
+    outline-color: var(--text);
+    z-index: 1;
+    position: relative;
   }
 
   .sort-row {
