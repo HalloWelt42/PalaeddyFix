@@ -344,7 +344,9 @@
                   {#if wikiData.description}
                     <p class="wiki-desc">{wikiData.description}</p>
                   {/if}
-                  {#if wikiData.extractHtml}
+                  {#if wikiData.articleHtml}
+                    {@html wikiData.articleHtml}
+                  {:else if wikiData.extractHtml}
                     {@html wikiData.extractHtml}
                   {:else if wikiData.extract}
                     <p>{wikiData.extract}</p>
@@ -783,6 +785,125 @@
   .wiki-text :global(b),
   .wiki-text :global(strong) {
     color: var(--text);
+  }
+  .wiki-text :global(h2) {
+    font-family: var(--font-button);
+    font-size: 15px;
+    font-weight: 700;
+    margin: 18px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .wiki-text :global(h3) {
+    font-family: var(--font-button);
+    font-size: 13px;
+    font-weight: 700;
+    margin: 14px 0 6px;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .wiki-text :global(h4),
+  .wiki-text :global(h5) {
+    font-family: var(--font-button);
+    font-size: 12px;
+    font-weight: 600;
+    margin: 10px 0 4px;
+    color: var(--text);
+  }
+  .wiki-text :global(ul),
+  .wiki-text :global(ol) {
+    margin: 0 0 10px;
+    padding-left: 22px;
+  }
+  .wiki-text :global(li) {
+    margin-bottom: 4px;
+  }
+  .wiki-text :global(img) {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+  }
+  .wiki-text :global(figure) {
+    margin: 10px 0;
+  }
+  .wiki-text :global(figcaption) {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+  .wiki-text :global(table) {
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 8px 0;
+    max-width: 100%;
+  }
+  .wiki-text :global(th),
+  .wiki-text :global(td) {
+    border: 1px solid var(--border);
+    padding: 4px 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .wiki-text :global(th) {
+    background: var(--surface-2);
+    font-weight: 600;
+  }
+  .wiki-text :global(.mw-editsection),
+  .wiki-text :global(.mw-empty-elt),
+  .wiki-text :global(.reference-accessdate),
+  .wiki-text :global(.mw-cite-backlink),
+  .wiki-text :global(.hatnote),
+  .wiki-text :global(.navbox),
+  .wiki-text :global(.metadata.mbox-small),
+  .wiki-text :global(.noprint) {
+    display: none !important;
+  }
+  .wiki-text :global(.infobox) {
+    float: right;
+    max-width: 240px;
+    margin: 0 0 12px 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 8px;
+    font-size: 11px;
+  }
+  .wiki-text :global(.infobox img) {
+    max-width: 100%;
+  }
+  .wiki-text :global(.thumb),
+  .wiki-text :global(.thumbinner) {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 6px;
+    margin: 8px 0;
+    max-width: 100%;
+  }
+  .wiki-text :global(.thumbcaption) {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+  .wiki-text :global(.reference) {
+    font-size: 9px;
+    vertical-align: super;
+    line-height: 1;
+  }
+  .wiki-text :global(.reflist),
+  .wiki-text :global(.references) {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .wiki-text :global(code) {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 11px;
   }
 
   .wiki-state {

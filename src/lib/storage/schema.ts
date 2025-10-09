@@ -93,6 +93,7 @@ export type WikipediaCacheEntry = {
   title: string;
   extract: string;
   extractHtml: string;
+  articleHtml: string;
   description?: string;
   lang: string;
   thumbnail?: { source: string; width: number; height: number };
