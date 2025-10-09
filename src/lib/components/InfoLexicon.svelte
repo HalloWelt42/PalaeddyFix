@@ -3,6 +3,7 @@
   import { info } from "../stores/info.svelte";
   import { ui } from "../stores/ui.svelte";
   import { listTopics, getTopic, type InfoTopic } from "../info/topics";
+  import { fetchWikipediaSummary, type WikipediaResult } from "../info/wikipedia";
 
   const allTopics: InfoTopic[] = listTopics().sort((a, b) =>
     a.title.localeCompare(b.title, "de"),
@@ -11,9 +12,68 @@
   let searchInput = $state<HTMLInputElement | null>(null);
   let articleEl = $state<HTMLElement | null>(null);
 
+  let wikiData = $state<WikipediaResult | null>(null);
+  let wikiLoading = $state<boolean>(false);
+  let wikiError = $state<string | null>(null);
+  let currentWikiUrl = $state<string | null>(null);
+
   const selectedTopic = $derived<InfoTopic | null>(
     info.topicKey ? getTopic(info.topicKey) : null,
   );
+
+  $effect(() => {
+    const url = selectedTopic?.wikipedia ?? null;
+    if (url === currentWikiUrl) return;
+    currentWikiUrl = url;
+    if (!url) {
+      wikiData = null;
+      wikiLoading = false;
+      wikiError = null;
+      return;
+    }
+    wikiData = null;
+    wikiLoading = true;
+    wikiError = null;
+    void (async () => {
+      try {
+        const result = await fetchWikipediaSummary(url);
+        if (currentWikiUrl === url) {
+          wikiData = result;
+          wikiError = result ? null : "Kein Wikipedia-Artikel gefunden.";
+        }
+      } catch (err) {
+        if (currentWikiUrl === url) {
+          wikiError = err instanceof Error ? err.message : String(err);
+        }
+      } finally {
+        if (currentWikiUrl === url) wikiLoading = false;
+      }
+    })();
+  });
+
+  async function reloadWiki(): Promise<void> {
+    if (!selectedTopic?.wikipedia) return;
+    wikiLoading = true;
+    wikiError = null;
+    try {
+      const result = await fetchWikipediaSummary(selectedTopic.wikipedia, { force: true });
+      wikiData = result;
+    } catch (err) {
+      wikiError = err instanceof Error ? err.message : String(err);
+    } finally {
+      wikiLoading = false;
+    }
+  }
+
+  function formatAge(ts: number): string {
+    const mins = Math.round((Date.now() - ts) / 60000);
+    if (mins < 1) return "gerade eben";
+    if (mins < 60) return `vor ${mins} min`;
+    const hours = Math.round(mins / 60);
+    if (hours < 24) return `vor ${hours} h`;
+    const days = Math.round(hours / 24);
+    return `vor ${days} Tag${days === 1 ? "" : "en"}`;
+  }
 
   const normalized = $derived(info.query.trim().toLowerCase());
 
@@ -198,8 +258,7 @@
           {#if info.query && matchCount > 0}
             <div class="hit-info">
               <span>
-                {matchCount} Treffer{matchCount === 1 ? "" : ""} für „{info.query}" --
-                Treffer {info.matchIndex + 1}/{matchCount}
+                {matchCount} Treffer für „{info.query}" -- Treffer {info.matchIndex + 1}/{matchCount}
               </span>
               <span class="kbd-hint">
                 <kbd>⏎</kbd> nächster, <kbd>⇧⏎</kbd> voriger
@@ -211,14 +270,103 @@
             </div>
           {/if}
         </div>
+
         <div class="prose">
           {@html articleHtml}
         </div>
+
         {#if selectedTopic.wikipedia}
-          <p class="wiki-foot">
-            Weiterlesen auf
-            <a href={selectedTopic.wikipedia} target="_blank" rel="noopener noreferrer">Wikipedia</a>
-          </p>
+          <section class="wiki-block">
+            <header class="wiki-head">
+              <div class="wiki-title">
+                <span class="wiki-badge">Wikipedia</span>
+                {#if wikiData}
+                  <span class="wiki-meta">
+                    {wikiData.lang.toUpperCase()} · {wikiData.fromCache
+                      ? `Cache ${formatAge(wikiData.fetchedAt)}`
+                      : "frisch geladen"}
+                  </span>
+                {/if}
+              </div>
+              <div class="wiki-actions">
+                <button
+                  type="button"
+                  class="wiki-btn"
+                  title="Neu laden"
+                  onclick={() => void reloadWiki()}
+                  disabled={wikiLoading}
+                >
+                  <Icon name="download" size={11} /> Aktualisieren
+                </button>
+                <a
+                  class="wiki-btn"
+                  href={wikiData?.pageUrl ?? selectedTopic.wikipedia}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Auf Wikipedia öffnen"
+                >
+                  <Icon name="info" size={11} /> Artikel öffnen
+                </a>
+              </div>
+            </header>
+
+            {#if wikiLoading}
+              <div class="wiki-state">
+                <Icon name="info" size={18} />
+                <p>Lade von {new URL(selectedTopic.wikipedia).host} …</p>
+              </div>
+            {:else if wikiError}
+              <div class="wiki-state error">
+                <p>{wikiError}</p>
+                <button type="button" class="wiki-btn" onclick={() => void reloadWiki()}>
+                  Erneut versuchen
+                </button>
+              </div>
+            {:else if wikiData}
+              <div class="wiki-body">
+                {#if wikiData.thumbnail}
+                  <a
+                    class="wiki-image"
+                    href={wikiData.originalImage?.source ?? wikiData.thumbnail.source}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Originalbild öffnen"
+                  >
+                    <img
+                      src={wikiData.thumbnail.source}
+                      alt={wikiData.title}
+                      loading="lazy"
+                    />
+                  </a>
+                {/if}
+                <div class="wiki-text">
+                  <h3>{wikiData.title}</h3>
+                  {#if wikiData.description}
+                    <p class="wiki-desc">{wikiData.description}</p>
+                  {/if}
+                  {#if wikiData.extractHtml}
+                    {@html wikiData.extractHtml}
+                  {:else if wikiData.extract}
+                    <p>{wikiData.extract}</p>
+                  {/if}
+                </div>
+              </div>
+              <footer class="wiki-foot">
+                Quelle: <a
+                  href={wikiData.pageUrl ?? selectedTopic.wikipedia}
+                  target="_blank"
+                  rel="noopener noreferrer">Wikipedia</a
+                >
+                · Inhalte unter
+                <a
+                  href="https://creativecommons.org/licenses/by-sa/4.0/deed.de"
+                  target="_blank"
+                  rel="noopener noreferrer">CC BY-SA 4.0</a
+                >
+                · Auto-Cache 30 Tage
+              </footer>
+            {/if}
+          </section>
         {/if}
       {:else}
         <div class="blank">
@@ -410,6 +558,14 @@
     border-bottom: 1px solid var(--border);
     z-index: 1;
   }
+  .wiki-block {
+    margin-top: 28px;
+    background: var(--surface);
+    border: 1px solid var(--info-line);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 0 0 4px var(--info-soft);
+  }
   .article-head h1 {
     font-family: var(--font-button);
     font-size: 22px;
@@ -515,17 +671,152 @@
     outline-offset: 1px;
   }
 
-  .wiki-foot {
-    max-width: 720px;
-    margin-top: 28px;
-    padding-top: 14px;
-    border-top: 1px solid var(--border);
+  .wiki-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .wiki-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .wiki-badge {
+    font-family: var(--font-button);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--bg);
+    background: var(--info);
+    padding: 3px 8px;
+    border-radius: 10px;
+  }
+  .wiki-meta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+  .wiki-actions {
+    display: inline-flex;
+    gap: 6px;
+  }
+  .wiki-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    color: var(--text-dim);
+    font-family: var(--font-button);
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 0.12s, color 0.12s;
+  }
+  .wiki-btn:hover:not(:disabled) {
+    border-color: var(--info);
+    color: var(--info);
+  }
+  .wiki-btn:disabled {
+    opacity: 0.5;
+    cursor: wait;
+  }
+
+  .wiki-body {
+    overflow: auto;
+    padding: 16px 20px 20px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .wiki-image {
+    display: block;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    border-radius: 3px;
+    max-width: 240px;
+  }
+  .wiki-image img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .wiki-text {
+    font-family: var(--font-button);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    min-width: 0;
+  }
+  .wiki-text h3 {
+    font-family: var(--font-button);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 4px;
+  }
+  .wiki-desc {
+    font-family: var(--font-button);
+    font-size: 11px;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 10px;
+  }
+  .wiki-text :global(p) {
+    margin: 0 0 10px;
+  }
+  .wiki-text :global(a) {
+    color: var(--info);
+  }
+  .wiki-text :global(b),
+  .wiki-text :global(strong) {
+    color: var(--text);
+  }
+
+  .wiki-state {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-dim);
     font-family: var(--font-button);
     font-size: 12px;
-    color: var(--text-dim);
+  }
+  .wiki-state.error {
+    color: var(--err);
+  }
+  .wiki-foot {
+    padding: 8px 20px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-mute);
+    background: var(--surface-2);
   }
   .wiki-foot a {
     color: var(--info);
+  }
+
+  @media (max-width: 900px) {
+    .wiki-body {
+      grid-template-columns: 1fr;
+    }
+    .wiki-image {
+      max-width: 320px;
+    }
   }
 
   .blank {

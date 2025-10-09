@@ -1,10 +1,11 @@
-import type { AnalysisResult, StoredImage, StoredPalette } from "./schema";
+import type { AnalysisResult, StoredImage, StoredPalette, WikipediaCacheEntry } from "./schema";
 
 const DB_NAME = "palaeddyfix";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_IMAGES = "images";
 const STORE_ANALYSES = "analyses";
 const STORE_PALETTES = "palettes";
+const STORE_WIKI = "wiki";
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -27,6 +28,10 @@ function openDB(): Promise<IDBDatabase> {
         const palettes = db.createObjectStore(STORE_PALETTES, { keyPath: "id" });
         palettes.createIndex("createdAt", "createdAt");
         palettes.createIndex("pinned", "pinned");
+      }
+      if (!db.objectStoreNames.contains(STORE_WIKI)) {
+        const wiki = db.createObjectStore(STORE_WIKI, { keyPath: "url" });
+        wiki.createIndex("fetchedAt", "fetchedAt");
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -173,6 +178,23 @@ export async function clearAll(): Promise<void> {
   await tx(STORE_IMAGES, "readwrite", (s) => s.clear());
   await tx(STORE_ANALYSES, "readwrite", (s) => s.clear());
   await tx(STORE_PALETTES, "readwrite", (s) => s.clear());
+  await tx(STORE_WIKI, "readwrite", (s) => s.clear());
+}
+
+export async function putWikiCache(entry: WikipediaCacheEntry): Promise<void> {
+  await tx(STORE_WIKI, "readwrite", (s) => s.put(entry));
+}
+
+export async function getWikiCache(url: string): Promise<WikipediaCacheEntry | undefined> {
+  return tx<WikipediaCacheEntry | undefined>(STORE_WIKI, "readonly", (s) => s.get(url));
+}
+
+export async function deleteWikiCache(url: string): Promise<void> {
+  await tx(STORE_WIKI, "readwrite", (s) => s.delete(url));
+}
+
+export async function clearWikiCache(): Promise<void> {
+  await tx(STORE_WIKI, "readwrite", (s) => s.clear());
 }
 
 export async function putPalette(p: StoredPalette): Promise<void> {

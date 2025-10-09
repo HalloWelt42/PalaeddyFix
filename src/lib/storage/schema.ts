@@ -87,3 +87,16 @@ export type StoredPalette = {
   pinned: boolean;
   note?: string;
 };
+
+export type WikipediaCacheEntry = {
+  url: string;
+  title: string;
+  extract: string;
+  extractHtml: string;
+  description?: string;
+  lang: string;
+  thumbnail?: { source: string; width: number; height: number };
+  originalImage?: { source: string; width: number; height: number };
+  pageUrl?: string;
+  fetchedAt: number;
+};
