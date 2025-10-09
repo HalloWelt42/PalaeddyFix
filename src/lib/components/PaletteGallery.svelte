@@ -200,16 +200,7 @@
               </div>
               {#if pal.author && !isCollapsed}<span class="author">{pal.author}</span>{/if}
             </header>
-            {#if isCollapsed}
-              <div class="swatches mini">
-                {#each pal.colors.slice(0, 12) as rgb, i (i)}
-                  <span class="sw" style="background: {rgbToHex(rgb)};"></span>
-                {/each}
-                {#if pal.colors.length > 12}
-                  <span class="sw-more">+{pal.colors.length - 12}</span>
-                {/if}
-              </div>
-            {:else}
+            {#if !isCollapsed}
               <div class="swatches">
                 {#each pal.colors as rgb, i (i)}
                   <span class="sw" style="background: {rgbToHex(rgb)};" title={rgbToHex(rgb)}></span>
@@ -311,16 +302,7 @@
                 </div>
               {/if}
             </header>
-            {#if isCollapsed}
-              <div class="swatches mini">
-                {#each pal.colors.slice(0, 12) as rgb, i (i)}
-                  <span class="sw" style="background: {rgbToHex(rgb)};"></span>
-                {/each}
-                {#if pal.colors.length > 12}
-                  <span class="sw-more">+{pal.colors.length - 12}</span>
-                {/if}
-              </div>
-            {:else}
+            {#if !isCollapsed}
             <div class="swatches own">
               {#each pal.colors as rgb, i (i + "-" + rgbToHex(rgb))}
                 <button
@@ -543,21 +525,6 @@
   }
   .card.collapsed h3 {
     font-size: 12px;
-  }
-  .swatches.mini {
-    gap: 1px;
-  }
-  .swatches.mini .sw {
-    width: 12px;
-    height: 12px;
-    border-width: 0;
-  }
-  .sw-more {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-mute);
-    margin-left: 4px;
-    align-self: center;
   }
   .card {
     background: var(--surface);
