@@ -12,6 +12,44 @@
 
   const builtinPalettes = listBuiltinPalettes();
 
+  let collapsed = $state<Set<string>>(loadCollapsed());
+
+  function loadCollapsed(): Set<string> {
+    try {
+      const raw = localStorage.getItem("palettes-collapsed");
+      if (!raw) return new Set();
+      return new Set(JSON.parse(raw) as string[]);
+    } catch {
+      return new Set();
+    }
+  }
+
+  function saveCollapsed(): void {
+    try {
+      localStorage.setItem("palettes-collapsed", JSON.stringify([...collapsed]));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function toggleCollapsed(id: string): void {
+    const next = new Set(collapsed);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    collapsed = next;
+    saveCollapsed();
+  }
+
+  function expandAll(): void {
+    collapsed = new Set();
+    saveCollapsed();
+  }
+
+  function collapseAll(ids: string[]): void {
+    collapsed = new Set([...collapsed, ...ids]);
+    saveCollapsed();
+  }
+
   const sourceLabel: Record<PaletteSource, string> = {
     "analysis-frequent": "Häufigste",
     "analysis-rare": "Seltenste",
@@ -118,13 +156,39 @@
     {#if activeTab === "builtin"}
       <p class="intro">
         Eingebaute Design-Systeme und klassische Paletten. Nutzbar für
-        Paletten-Matching, Snap-to-Palette und als Referenz. Klick auf
-        eine Kachel blendet die Farben vergrößert ein.
+        Paletten-Matching, Snap-to-Palette und als Referenz. Nicht benötigte
+        Paletten kannst du einklappen, um den Vergleich übersichtlich zu halten.
       </p>
+      <div class="compare-bar">
+        <button type="button" class="compare-btn" onclick={expandAll}>
+          Alle ausklappen
+        </button>
+        <button
+          type="button"
+          class="compare-btn"
+          onclick={() => collapseAll(builtinPalettes.map((p) => p.id))}
+        >
+          Alle einklappen
+        </button>
+        <span class="compare-meta">
+          {builtinPalettes.length - builtinPalettes.filter((p) => collapsed.has(p.id)).length}
+          von {builtinPalettes.length} sichtbar
+        </span>
+      </div>
       <div class="grid">
         {#each builtinPalettes as pal (pal.id)}
-          <article class="card">
+          {@const isCollapsed = collapsed.has(pal.id)}
+          <article class="card" class:collapsed={isCollapsed}>
             <header>
+              <button
+                type="button"
+                class="collapse-btn"
+                title={isCollapsed ? "Ausklappen" : "Einklappen"}
+                onclick={() => toggleCollapsed(pal.id)}
+                aria-expanded={!isCollapsed}
+              >
+                <Icon name={isCollapsed ? "plus" : "x"} size={10} />
+              </button>
               <div class="name-row">
                 <h3>
                   {#if pal.infoTopic}
@@ -134,19 +198,30 @@
                   {/if}
                 </h3>
               </div>
-              {#if pal.author}<span class="author">{pal.author}</span>{/if}
+              {#if pal.author && !isCollapsed}<span class="author">{pal.author}</span>{/if}
             </header>
-            <div class="swatches">
-              {#each pal.colors as rgb, i (i)}
-                <span class="sw" style="background: {rgbToHex(rgb)};" title={rgbToHex(rgb)}></span>
-              {/each}
-            </div>
-            <footer>
-              <span class="n">{pal.colors.length} Farben</span>
-              {#if pal.description}
-                <span class="desc">{pal.description}</span>
-              {/if}
-            </footer>
+            {#if isCollapsed}
+              <div class="swatches mini">
+                {#each pal.colors.slice(0, 12) as rgb, i (i)}
+                  <span class="sw" style="background: {rgbToHex(rgb)};"></span>
+                {/each}
+                {#if pal.colors.length > 12}
+                  <span class="sw-more">+{pal.colors.length - 12}</span>
+                {/if}
+              </div>
+            {:else}
+              <div class="swatches">
+                {#each pal.colors as rgb, i (i)}
+                  <span class="sw" style="background: {rgbToHex(rgb)};" title={rgbToHex(rgb)}></span>
+                {/each}
+              </div>
+              <footer>
+                <span class="n">{pal.colors.length} Farben</span>
+                {#if pal.description}
+                  <span class="desc">{pal.description}</span>
+                {/if}
+              </footer>
+            {/if}
           </article>
         {/each}
       </div>
@@ -164,8 +239,25 @@
       <p class="intro">
         Selbst gespeicherte Paletten, gruppiert nach Analyse-Typ. Gepinnte
         stehen innerhalb der Gruppe oben. Klick auf den Stift benennt um,
-        das Stern-Icon pinnt, der Mülleimer löscht.
+        das Stern-Icon pinnt, der Mülleimer löscht. Farben einzeln per Klick
+        löschen, Karten einklappen zum Vergleichen.
       </p>
+      <div class="compare-bar">
+        <button type="button" class="compare-btn" onclick={expandAll}>
+          Alle ausklappen
+        </button>
+        <button
+          type="button"
+          class="compare-btn"
+          onclick={() => collapseAll(ownSorted.map((p) => p.id))}
+        >
+          Alle einklappen
+        </button>
+        <span class="compare-meta">
+          {ownSorted.length - ownSorted.filter((p) => collapsed.has(p.id)).length}
+          von {ownSorted.length} sichtbar
+        </span>
+      </div>
       {#each ownGrouped as g (g.source)}
         <section class="own-group">
           <h2 class="group-head">
@@ -174,39 +266,61 @@
           </h2>
           <div class="grid">
             {#each g.items as pal (pal.id)}
-          <article class="card" class:pinned={pal.pinned}>
+          {@const isCollapsed = collapsed.has(pal.id)}
+          <article class="card" class:pinned={pal.pinned} class:collapsed={isCollapsed}>
             <header>
+              <button
+                type="button"
+                class="collapse-btn"
+                title={isCollapsed ? "Ausklappen" : "Einklappen"}
+                onclick={() => toggleCollapsed(pal.id)}
+                aria-expanded={!isCollapsed}
+              >
+                <Icon name={isCollapsed ? "plus" : "x"} size={10} />
+              </button>
               <div class="name-row">
                 <h3>{pal.name}</h3>
-                <span class="src">{sourceLabel[pal.source]}</span>
+                {#if !isCollapsed}<span class="src">{sourceLabel[pal.source]}</span>{/if}
               </div>
-              <div class="own-actions">
-                <button
-                  type="button"
-                  class="mini"
-                  title={pal.pinned ? "Pin entfernen" : "Anpinnen"}
-                  onclick={() => void palettes.togglePin(pal.id)}
-                >
-                  <Icon name="star" size={12} />
-                </button>
-                <button
-                  type="button"
-                  class="mini"
-                  title="Umbenennen"
-                  onclick={() => void onRename(pal.id, pal.name)}
-                >
-                  <Icon name="tag" size={12} />
-                </button>
-                <button
-                  type="button"
-                  class="mini danger"
-                  title="Löschen"
-                  onclick={() => void onDelete(pal.id, pal.name)}
-                >
-                  <Icon name="trash" size={12} />
-                </button>
-              </div>
+              {#if !isCollapsed}
+                <div class="own-actions">
+                  <button
+                    type="button"
+                    class="mini"
+                    title={pal.pinned ? "Pin entfernen" : "Anpinnen"}
+                    onclick={() => void palettes.togglePin(pal.id)}
+                  >
+                    <Icon name="star" size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    class="mini"
+                    title="Umbenennen"
+                    onclick={() => void onRename(pal.id, pal.name)}
+                  >
+                    <Icon name="tag" size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    class="mini danger"
+                    title="Löschen"
+                    onclick={() => void onDelete(pal.id, pal.name)}
+                  >
+                    <Icon name="trash" size={12} />
+                  </button>
+                </div>
+              {/if}
             </header>
+            {#if isCollapsed}
+              <div class="swatches mini">
+                {#each pal.colors.slice(0, 12) as rgb, i (i)}
+                  <span class="sw" style="background: {rgbToHex(rgb)};"></span>
+                {/each}
+                {#if pal.colors.length > 12}
+                  <span class="sw-more">+{pal.colors.length - 12}</span>
+                {/if}
+              </div>
+            {:else}
             <div class="swatches own">
               {#each pal.colors as rgb, i (i + "-" + rgbToHex(rgb))}
                 <button
@@ -223,6 +337,7 @@
               <span class="n">{pal.colors.length} Farben</span>
               <span class="desc">{formatDate(pal.createdAt)}</span>
             </footer>
+            {/if}
           </article>
             {/each}
           </div>
@@ -373,6 +488,76 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 12px;
+  }
+  .compare-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 6px 0;
+  }
+  .compare-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text-dim);
+    padding: 4px 10px;
+    font-family: var(--font-button);
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: var(--radius-btn);
+    cursor: pointer;
+  }
+  .compare-btn:hover {
+    border-color: var(--text-dim);
+    color: var(--text);
+  }
+  .compare-meta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-mute);
+    margin-left: auto;
+  }
+  .collapse-btn {
+    width: 18px;
+    height: 18px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .collapse-btn:hover {
+    border-color: var(--text-dim);
+    color: var(--text);
+    background: var(--surface-2);
+  }
+  .card.collapsed {
+    padding: 6px 10px;
+    gap: 4px;
+  }
+  .card.collapsed header {
+    align-items: center;
+  }
+  .card.collapsed h3 {
+    font-size: 12px;
+  }
+  .swatches.mini {
+    gap: 1px;
+  }
+  .swatches.mini .sw {
+    width: 12px;
+    height: 12px;
+    border-width: 0;
+  }
+  .sw-more {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-mute);
+    margin-left: 4px;
+    align-self: center;
   }
   .card {
     background: var(--surface);
