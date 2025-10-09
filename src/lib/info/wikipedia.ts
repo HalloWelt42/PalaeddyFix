@@ -90,6 +90,8 @@ function cleanWikipediaHtml(rawHtml: string, host: string, pageUrl: string): str
     const href = a.getAttribute("href") ?? "";
     if (href.startsWith("//")) {
       a.setAttribute("href", `https:${href}`);
+    } else if (href.startsWith("./")) {
+      a.setAttribute("href", `https://${host}/wiki/${href.slice(2)}`);
     } else if (href.startsWith("/")) {
       a.setAttribute("href", `https://${host}${href}`);
     } else if (href.startsWith("#")) {

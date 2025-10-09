@@ -11,6 +11,7 @@
 
   let searchInput = $state<HTMLInputElement | null>(null);
   let articleEl = $state<HTMLElement | null>(null);
+  let wikiTextEl = $state<HTMLElement | null>(null);
 
   let wikiData = $state<WikipediaResult | null>(null);
   let wikiLoading = $state<boolean>(false);
@@ -62,6 +63,43 @@
       wikiError = err instanceof Error ? err.message : String(err);
     } finally {
       wikiLoading = false;
+    }
+  }
+
+  $effect(() => {
+    const el = wikiTextEl;
+    if (!el) return;
+    void wikiData;
+    void selectedTopic;
+    queueMicrotask(() => {
+      if (!el) return;
+      const topicUrl = selectedTopic?.wikipedia;
+      const pageUrl = wikiData?.pageUrl ?? topicUrl ?? "";
+      const host = topicUrl ? safeHost(topicUrl) : "";
+      for (const a of Array.from(el.querySelectorAll("a"))) {
+        const href = a.getAttribute("href") ?? "";
+        if (!href) {
+          if (pageUrl) a.setAttribute("href", pageUrl);
+        } else if (href.startsWith("#")) {
+          if (pageUrl) a.setAttribute("href", `${pageUrl}${href}`);
+        } else if (href.startsWith("./")) {
+          if (host) a.setAttribute("href", `https://${host}/wiki/${href.slice(2)}`);
+        } else if (href.startsWith("//")) {
+          a.setAttribute("href", `https:${href}`);
+        } else if (href.startsWith("/")) {
+          if (host) a.setAttribute("href", `https://${host}${href}`);
+        }
+        a.setAttribute("target", "_blank");
+        a.setAttribute("rel", "noopener noreferrer");
+      }
+    });
+  });
+
+  function safeHost(url: string): string {
+    try {
+      return new URL(url).host;
+    } catch {
+      return "";
     }
   }
 
@@ -339,7 +377,7 @@
                     />
                   </a>
                 {/if}
-                <div class="wiki-text">
+                <div class="wiki-text" bind:this={wikiTextEl}>
                   <h3>{wikiData.title}</h3>
                   {#if wikiData.description}
                     <p class="wiki-desc">{wikiData.description}</p>
