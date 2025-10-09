@@ -1,8 +1,10 @@
 <script lang="ts">
   import Icon from "./ui/Icon.svelte";
+  import WorkingPaletteBar from "./WorkingPaletteBar.svelte";
   import { selection } from "../stores/selection.svelte";
   import { gallery } from "../stores/gallery.svelte";
   import { settings } from "../stores/settings.svelte";
+  import { palettes } from "../stores/palettes.svelte";
   import { formatColor, formatColorA, hasAlpha, rgbToHex } from "../analysis/convert";
   import type { RGB } from "../analysis/convert";
 
@@ -62,8 +64,50 @@
     return "-";
   }
 
+  let dragStart = $state<{ x: number; y: number } | null>(null);
+  let dragCurrent = $state<{ x: number; y: number } | null>(null);
+
+  function toImageCoords(e: MouseEvent): { x: number; y: number } | null {
+    if (!canvasEl) return null;
+    const rect = canvasEl.getBoundingClientRect();
+    const sx = canvasEl.width / rect.width;
+    const sy = canvasEl.height / rect.height;
+    const x = Math.max(0, Math.min(canvasEl.width - 1, Math.round((e.clientX - rect.left) * sx)));
+    const y = Math.max(0, Math.min(canvasEl.height - 1, Math.round((e.clientY - rect.top) * sy)));
+    return { x, y };
+  }
+
+  function onCanvasDown(e: MouseEvent): void {
+    if (!selection.rectTool) return;
+    const p = toImageCoords(e);
+    if (!p) return;
+    e.preventDefault();
+    dragStart = p;
+    dragCurrent = p;
+  }
+
+  function onCanvasUp(e: MouseEvent): void {
+    if (!selection.rectTool || !dragStart) return;
+    e.preventDefault();
+    const end = toImageCoords(e) ?? dragStart;
+    const x = Math.min(dragStart.x, end.x);
+    const y = Math.min(dragStart.y, end.y);
+    const w = Math.abs(end.x - dragStart.x);
+    const h = Math.abs(end.y - dragStart.y);
+    if (w >= 4 && h >= 4) {
+      selection.setRegion({ x, y, w, h });
+    }
+    dragStart = null;
+    dragCurrent = null;
+  }
+
   function onCanvasMove(e: MouseEvent): void {
     if (!canvasEl) return;
+    if (dragStart) {
+      const p = toImageCoords(e);
+      if (p) dragCurrent = p;
+      return;
+    }
     const ctx = canvasEl.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
     const rect = canvasEl.getBoundingClientRect();
@@ -84,6 +128,31 @@
     }
     drawMagnifier();
   }
+
+  const rectOverlay = $derived.by(() => {
+    if (!canvasEl) return null;
+    const src = dragStart && dragCurrent
+      ? {
+          x: Math.min(dragStart.x, dragCurrent.x),
+          y: Math.min(dragStart.y, dragCurrent.y),
+          w: Math.abs(dragCurrent.x - dragStart.x),
+          h: Math.abs(dragCurrent.y - dragStart.y),
+        }
+      : selection.region;
+    if (!src) return null;
+    const rect = canvasEl.getBoundingClientRect();
+    const wrapRect = wrapperEl?.getBoundingClientRect();
+    if (!wrapRect) return null;
+    const scaleX = rect.width / canvasEl.width;
+    const scaleY = rect.height / canvasEl.height;
+    return {
+      left: rect.left - wrapRect.left + src.x * scaleX,
+      top: rect.top - wrapRect.top + src.y * scaleY,
+      width: src.w * scaleX,
+      height: src.h * scaleY,
+      dragging: !!dragStart,
+    };
+  });
 
   function drawMagnifier(): void {
     const src = canvasEl;
@@ -205,15 +274,43 @@
       {/if}
     </div>
     <div class="spacer"></div>
+    <button
+      class="btn"
+      type="button"
+      class:btn-active={selection.rectTool}
+      title={selection.rectTool ? "Rechteck-Auswahl deaktivieren" : "Rechteck-Auswahl aktivieren"}
+      onclick={() => selection.toggleRectTool()}
+    >
+      <Icon name="grid" size={12} /> Bereich
+    </button>
+    {#if selection.region}
+      <button
+        class="btn"
+        type="button"
+        title="Bereich zurücksetzen"
+        onclick={() => selection.clearRegion()}
+      >
+        <Icon name="x" size={12} /> Bereich löschen
+      </button>
+    {/if}
   </div>
 
-  <div class="canvas-wrap" bind:this={wrapperEl}>
+  <div class="canvas-wrap" bind:this={wrapperEl} class:rect-mode={selection.rectTool}>
     <canvas
       bind:this={canvasEl}
       onmousemove={onCanvasMove}
       onmouseleave={onCanvasLeave}
       onclick={onCanvasClick}
+      onmousedown={onCanvasDown}
+      onmouseup={onCanvasUp}
     ></canvas>
+    {#if rectOverlay}
+      <div
+        class="region-overlay"
+        class:dragging={rectOverlay.dragging}
+        style="left: {rectOverlay.left}px; top: {rectOverlay.top}px; width: {rectOverlay.width}px; height: {rectOverlay.height}px;"
+      ></div>
+    {/if}
     {#if hoverRgb}
       {@const offX = hoverX > 220 ? -(MAG_SIZE + 16) : 16}
       {@const offY = hoverY > 220 ? -(MAG_SIZE + 16) : 16}
@@ -278,13 +375,17 @@
       <div class="cell"><span class="k">Importiert</span><span class="v">{formatDate(item.createdAt)}</span></div>
     </div>
   {/if}
+
+  {#if palettes.working.length > 0 || selection.rectTool}
+    <WorkingPaletteBar />
+  {/if}
 </div>
 
 <style>
   .viewer {
     height: 100%;
     display: grid;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto 1fr auto auto;
     gap: 10px;
     padding: 14px;
     min-height: 0;
@@ -449,6 +550,24 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
+  }
+  .btn-active {
+    background: var(--accent-soft);
+    border-color: var(--accent-line);
+    color: var(--text);
+  }
+  .rect-mode canvas {
+    cursor: crosshair;
+  }
+  .region-overlay {
+    position: absolute;
+    border: 2px solid var(--accent);
+    background: rgba(251, 191, 36, 0.08);
+    pointer-events: none;
+    z-index: 3;
+  }
+  .region-overlay.dragging {
+    border-style: dashed;
   }
   .btn:hover {
     border-color: var(--text);

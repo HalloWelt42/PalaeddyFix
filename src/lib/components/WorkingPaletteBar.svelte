@@ -1,0 +1,187 @@
+<script lang="ts">
+  import Icon from "./ui/Icon.svelte";
+  import PromptModal from "./ui/PromptModal.svelte";
+  import { palettes } from "../stores/palettes.svelte";
+  import { rgbToHex } from "../analysis/convert";
+
+  type Props = {
+    compact?: boolean;
+  };
+
+  const { compact = false }: Props = $props();
+
+  let saveOpen = $state<boolean>(false);
+
+  async function confirmSave(name: string): Promise<void> {
+    saveOpen = false;
+    if (!name.trim()) return;
+    await palettes.workingSaveAs(name.trim());
+    palettes.workingClear();
+  }
+</script>
+
+<div class="wpal" class:compact>
+  <div class="head">
+    <div class="title">
+      <Icon name="palette" size={12} />
+      <b>Arbeitspalette</b>
+      <span class="count">{palettes.working.length}</span>
+    </div>
+    {#if palettes.working.length > 0}
+      <div class="actions">
+        <button
+          type="button"
+          class="btn save"
+          title="Als eigene Palette speichern"
+          onclick={() => (saveOpen = true)}
+        >
+          <Icon name="star" size={11} /> Speichern
+        </button>
+        <button
+          type="button"
+          class="btn"
+          title="Arbeitspalette leeren"
+          onclick={() => palettes.workingClear()}
+        >
+          <Icon name="trash" size={11} /> Leeren
+        </button>
+      </div>
+    {/if}
+  </div>
+
+  <div class="swatches">
+    {#if palettes.working.length === 0}
+      <p class="hint">
+        Leer -- im Zonal-Tab auf <b>Arbeitspalette</b> klicken, um Zonenfarben
+        zu sammeln. Mehrere Durchgänge möglich.
+      </p>
+    {:else}
+      {#each palettes.working as rgb, i (i + "-" + rgbToHex(rgb))}
+        {@const hex = rgbToHex(rgb)}
+        <button
+          type="button"
+          class="sw"
+          style="background: {hex};"
+          title="{hex} – Klick entfernt"
+          onclick={() => palettes.workingRemoveAt(i)}
+          aria-label="Farbe {hex} aus Arbeitspalette entfernen"
+        ></button>
+      {/each}
+    {/if}
+  </div>
+</div>
+
+<PromptModal
+  open={saveOpen}
+  title="Arbeitspalette speichern"
+  label="Name"
+  defaultValue="Arbeitspalette"
+  confirmLabel="Speichern"
+  onConfirm={confirmSave}
+  onCancel={() => (saveOpen = false)}
+/>
+
+<style>
+  .wpal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .wpal.compact {
+    padding: 6px 8px;
+    gap: 4px;
+  }
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .title b {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .count {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-mute);
+  }
+  .actions {
+    display: inline-flex;
+    gap: 4px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text-dim);
+    font-family: var(--font-button);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: var(--radius-btn);
+    cursor: pointer;
+  }
+  .btn:hover {
+    color: var(--text);
+    border-color: var(--text-dim);
+  }
+  .btn.save:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    align-items: center;
+    min-height: 16px;
+  }
+  .sw {
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--border-strong);
+    padding: 0;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.12s;
+  }
+  .sw:hover {
+    transform: scale(1.2);
+    z-index: 1;
+    box-shadow: 0 0 0 2px var(--err);
+  }
+  .sw:hover::after {
+    content: "×";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    text-shadow: 0 0 3px #000;
+  }
+  .hint {
+    font-family: var(--font-button);
+    font-size: 11px;
+    color: var(--text-mute);
+    margin: 0;
+  }
+</style>

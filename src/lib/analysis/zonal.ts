@@ -5,7 +5,13 @@ export type Zone = {
   alpha: number;
 };
 
-export async function computeZones(blob: Blob, gridSize: number): Promise<Zone[]> {
+export type ZoneRegion = { x: number; y: number; w: number; h: number };
+
+export async function computeZones(
+  blob: Blob,
+  gridSize: number,
+  region?: ZoneRegion | null,
+): Promise<Zone[]> {
   const bitmap = await createImageBitmap(blob);
   try {
     const g = Math.max(2, Math.min(32, Math.floor(gridSize)));
@@ -16,7 +22,19 @@ export async function computeZones(blob: Blob, gridSize: number): Promise<Zone[]
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas 2D nicht verfügbar");
     ctx.clearRect(0, 0, g, g);
-    ctx.drawImage(bitmap, 0, 0, g, g);
+    if (region && region.w > 0 && region.h > 0) {
+      const sx = Math.max(0, Math.floor(region.x));
+      const sy = Math.max(0, Math.floor(region.y));
+      const sw = Math.min(bitmap.width - sx, Math.floor(region.w));
+      const sh = Math.min(bitmap.height - sy, Math.floor(region.h));
+      if (sw > 0 && sh > 0) {
+        ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, g, g);
+      } else {
+        ctx.drawImage(bitmap, 0, 0, g, g);
+      }
+    } else {
+      ctx.drawImage(bitmap, 0, 0, g, g);
+    }
     const data = ctx.getImageData(0, 0, g, g).data;
     const zones: Zone[] = [];
     for (let y = 0; y < g; y++) {

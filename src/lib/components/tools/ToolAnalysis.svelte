@@ -4,6 +4,7 @@
   import Segmented from "../ui/Segmented.svelte";
   import InfoLink from "../ui/InfoLink.svelte";
   import PromptModal from "../ui/PromptModal.svelte";
+  import WorkingPaletteBar from "../WorkingPaletteBar.svelte";
   import { selection } from "../../stores/selection.svelte";
   import { analysis } from "../../stores/analysis.svelte";
   import { settings } from "../../stores/settings.svelte";
@@ -30,6 +31,7 @@
   $effect(() => {
     const id = selection.id;
     const grid = zonalGrid;
+    const region = selection.region;
     if (!id) {
       zones = [];
       zonalImageId = null;
@@ -40,7 +42,7 @@
       try {
         const img = await getImage(id);
         if (!img) return;
-        const result = await computeZones(img.blob, grid);
+        const result = await computeZones(img.blob, grid, region);
         zones = result;
         zonalImageId = id;
       } catch {
@@ -248,7 +250,14 @@
         <InfoLink topic="zonal">Zonale Analyse</InfoLink>: Bild in {zonalGrid}×{zonalGrid}
         Zellen geteilt, pro Zelle der Farbdurchschnitt -- zeigt räumliche
         Verteilung der Farben.
+        {#if selection.region}
+          Aktuell auf Bereich {selection.region.w}×{selection.region.h} beschränkt.
+        {/if}
       </p>
+
+      <div class="wp-inline">
+        <WorkingPaletteBar compact={true} />
+      </div>
 
       <div class="status-bar">
         <span class="status-label">
@@ -287,7 +296,18 @@
             <button
               type="button"
               class="save"
-              title="Deduplizierte Zonenfarben als Palette speichern"
+              title="Zu Arbeitspalette hinzufügen (kummulierend)"
+              onclick={() => {
+                for (const c of zonalDedup) palettes.workingAdd(c.rgb);
+                showFlash(`${zonalDedup.length} Farben zur Arbeitspalette`);
+              }}
+            >
+              <Icon name="plus" size={11} /> Arbeitspalette
+            </button>
+            <button
+              type="button"
+              class="save"
+              title="Deduplizierte Zonenfarben direkt als Palette speichern"
               onclick={() => void saveAsPalette("manual", zonalDedup)}
             >
               <Icon name="star" size={11} /> Speichern
@@ -636,6 +656,9 @@
     position: relative;
   }
 
+  .wp-inline {
+    margin: 8px 0;
+  }
   .sort-row {
     display: flex;
     align-items: center;
