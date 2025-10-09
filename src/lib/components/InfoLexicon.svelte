@@ -883,6 +883,59 @@
     background: #c8c8cc;
     padding: 4px;
   }
+
+  .wiki-text :global(ul.gallery),
+  .wiki-text :global(.gallery) {
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    padding: 0;
+    margin: 12px 0;
+    gap: 10px;
+  }
+  .wiki-text :global(li.gallerybox),
+  .wiki-text :global(.gallerybox) {
+    list-style: none;
+    margin: 0 !important;
+    padding: 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    flex: 0 1 160px;
+    width: 160px !important;
+    max-width: 200px !important;
+    min-width: 140px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .wiki-text :global(.gallerybox .thumb),
+  .wiki-text :global(.gallerybox .thumbinner),
+  .wiki-text :global(.gallerybox .gallerytextwrapper) {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    width: auto !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+  }
+  .wiki-text :global(.gallerybox img) {
+    max-width: 100% !important;
+    width: auto !important;
+    height: auto !important;
+  }
+  .wiki-text :global(.gallerytext) {
+    font-family: var(--font-button);
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: center;
+    padding: 2px;
+  }
+  .wiki-text :global(.gallerytext p) {
+    margin: 0;
+  }
   .wiki-text :global(figure) {
     margin: 10px 0;
   }
