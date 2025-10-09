@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import Header from "./Header.svelte";
   import Footer from "./Footer.svelte";
   import RailLeft from "./RailLeft.svelte";
@@ -18,6 +18,8 @@
   import { installClipboardListener } from "../import/clipboard";
   import { ingestFiles } from "../import/fileIntake";
   import { selection } from "../stores/selection.svelte";
+  import { listTopics } from "../info/topics";
+  import { prewarmWikipediaCache } from "../info/wikipedia";
 
   let globalFileInput = $state<HTMLInputElement | null>(null);
   let donationOpen = $state<boolean>(false);
@@ -73,20 +75,28 @@
 
   $effect(() => {
     const id = selection.id;
-    if (!id) {
-      analysis.clear();
-      return;
-    }
-    void (async () => {
-      const hadFreq = await analysis.loadCached(id);
-      if (!hadFreq) {
-        await analysis.analyze(id);
+    const region = selection.region;
+    untrack(() => {
+      if (!id) {
+        analysis.clear();
+        return;
       }
-      const hadRare = await analysis.loadRareCached(id);
-      if (!hadRare) {
-        await analysis.analyzeRare(id);
-      }
-    })();
+      void (async () => {
+        if (region) {
+          await analysis.analyze(id, region);
+          await analysis.analyzeRare(id, region);
+          return;
+        }
+        const hadFreq = await analysis.loadCached(id);
+        if (!hadFreq) {
+          await analysis.analyze(id);
+        }
+        const hadRare = await analysis.loadRareCached(id);
+        if (!hadRare) {
+          await analysis.analyzeRare(id);
+        }
+      })();
+    });
   });
 
   onMount(() => {
@@ -94,6 +104,13 @@
     info.init();
     void gallery.init();
     void palettes.init();
+
+    const wikiUrls = listTopics()
+      .map((t) => t.wikipedia)
+      .filter((u): u is string => typeof u === "string" && u.length > 0);
+    void prewarmWikipediaCache(wikiUrls, (done, total) => {
+      info.setPrewarmProgress(done, total);
+    });
 
     const removeClipboard = installClipboardListener(async (files) => {
       const images = await ingestFiles(files);

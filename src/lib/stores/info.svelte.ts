@@ -16,6 +16,13 @@ class InfoStore {
   height = $state<number>(DEFAULT_INFO_PANEL.height);
   minimized = $state<boolean>(false);
   maximized = $state<boolean>(false);
+  prewarmDone = $state<number>(0);
+  prewarmTotal = $state<number>(0);
+
+  setPrewarmProgress(done: number, total: number): void {
+    this.prewarmDone = done;
+    this.prewarmTotal = total;
+  }
 
   select(key: string | null): void {
     this.topicKey = key;

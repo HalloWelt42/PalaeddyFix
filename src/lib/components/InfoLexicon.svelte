@@ -3,7 +3,7 @@
   import { info } from "../stores/info.svelte";
   import { ui } from "../stores/ui.svelte";
   import { listTopics, getTopic, type InfoTopic } from "../info/topics";
-  import { fetchWikipediaSummary, type WikipediaResult } from "../info/wikipedia";
+  import { fetchWikipediaSummary, loadCachedWikipedia, stripHtml, type WikipediaResult } from "../info/wikipedia";
 
   const allTopics: InfoTopic[] = listTopics().sort((a, b) =>
     a.title.localeCompare(b.title, "de"),
@@ -15,6 +15,26 @@
   let sidebarOpen = $state<boolean>(
     typeof localStorage !== "undefined" ? localStorage.getItem("lexicon-sidebar") !== "closed" : true,
   );
+  let wikiTexts = $state<Record<string, string>>({});
+
+  async function loadWikiTexts(): Promise<void> {
+    const next: Record<string, string> = {};
+    for (const t of allTopics) {
+      if (!t.wikipedia) continue;
+      const cached = await loadCachedWikipedia(t.wikipedia);
+      if (cached?.articleHtml) {
+        next[t.key] = stripHtml(cached.articleHtml);
+      } else if (cached?.extract) {
+        next[t.key] = cached.extract;
+      }
+    }
+    wikiTexts = next;
+  }
+
+  $effect(() => {
+    void info.prewarmDone;
+    void loadWikiTexts();
+  });
 
   function toggleSidebar(): void {
     sidebarOpen = !sidebarOpen;
@@ -130,9 +150,30 @@
   const listMatches = $derived.by(() => {
     if (!normalized) return allTopics;
     return allTopics.filter((t) => {
-      const text = (t.title + " " + (t.subtitle ?? "") + " " + t.markdown).toLowerCase();
-      return text.includes(normalized);
+      const own =
+        (t.title + " " + (t.subtitle ?? "") + " " + t.markdown).toLowerCase();
+      if (own.includes(normalized)) return true;
+      const wiki = (wikiTexts[t.key] ?? "").toLowerCase();
+      return wiki.includes(normalized);
     });
+  });
+
+  const currentWikiText = $derived.by(() => {
+    if (!selectedTopic) return "";
+    return wikiTexts[selectedTopic.key] ?? "";
+  });
+  const currentWikiMatches = $derived.by(() => {
+    if (!normalized || !currentWikiText) return 0;
+    let count = 0;
+    let idx = 0;
+    const t = currentWikiText.toLowerCase();
+    while (idx !== -1) {
+      idx = t.indexOf(normalized, idx);
+      if (idx === -1) break;
+      count++;
+      idx += normalized.length;
+    }
+    return count;
   });
 
   const matchCount = $derived.by(() => {
@@ -148,6 +189,8 @@
     }
     return count;
   });
+
+  const totalMatchCount = $derived(matchCount + currentWikiMatches);
 
   const articleHtml = $derived.by(() => {
     if (!selectedTopic) return "";
@@ -254,7 +297,12 @@
     <div class="title">
       <Icon name="info" size={16} />
       <h2>Info-Lexikon</h2>
-      <span class="sub">{allTopics.length} Artikel</span>
+      <span class="sub">
+        {allTopics.length} Artikel
+        {#if info.prewarmTotal > 0 && info.prewarmDone < info.prewarmTotal}
+          · Wikipedia {info.prewarmDone}/{info.prewarmTotal}
+        {/if}
+      </span>
     </div>
     <div class="search">
       <Icon name="search" size={12} />
@@ -274,8 +322,8 @@
     </div>
     <button
       type="button"
-      class="close"
-      title="Schließen"
+      class="close end"
+      title="Lexikon schließen"
       onclick={() => ui.setLeft(null)}
     >
       <Icon name="x" size={14} />
@@ -314,16 +362,22 @@
           {#if selectedTopic.subtitle}
             <p class="subtitle">{selectedTopic.subtitle}</p>
           {/if}
-          {#if info.query && matchCount > 0}
+          {#if info.query && totalMatchCount > 0}
             <div class="hit-info">
               <span>
-                {matchCount} Treffer für „{info.query}" -- Treffer {info.matchIndex + 1}/{matchCount}
+                {totalMatchCount} Treffer für „{info.query}"
+                {#if currentWikiMatches > 0}
+                  ({matchCount} Artikel + {currentWikiMatches} Wikipedia)
+                {/if}
+                {#if matchCount > 0}
+                  -- Treffer {info.matchIndex + 1}/{matchCount}
+                {/if}
               </span>
               <span class="kbd-hint">
                 <kbd>⏎</kbd> nächster, <kbd>⇧⏎</kbd> voriger
               </span>
             </div>
-          {:else if info.query && matchCount === 0}
+          {:else if info.query && totalMatchCount === 0}
             <div class="hit-info muted">
               Im aktuellen Artikel keine Treffer für „{info.query}".
             </div>
@@ -382,6 +436,8 @@
                 </button>
               </div>
             {:else if wikiData}
+              {@const wikiBody = wikiData.articleHtml ?? wikiData.extractHtml ?? ""}
+              {@const wikiRendered = normalized && wikiBody ? highlightHtml(wikiBody, normalized, -1) : wikiBody}
               <div class="wiki-body">
                 {#if wikiData.thumbnail}
                   <a
@@ -403,10 +459,8 @@
                   {#if wikiData.description}
                     <p class="wiki-desc">{wikiData.description}</p>
                   {/if}
-                  {#if wikiData.articleHtml}
-                    {@html wikiData.articleHtml}
-                  {:else if wikiData.extractHtml}
-                    {@html wikiData.extractHtml}
+                  {#if wikiRendered}
+                    {@html wikiRendered}
                   {:else if wikiData.extract}
                     <p>{wikiData.extract}</p>
                   {/if}
@@ -501,6 +555,11 @@
     font-size: 10px;
     color: var(--text-mute);
     margin-left: 4px;
+  }
+  .close.end {
+    margin-left: auto;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
   }
   .close {
     width: 28px;

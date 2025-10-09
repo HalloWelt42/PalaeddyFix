@@ -5,6 +5,38 @@ const TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 export type WikipediaResult = WikipediaCacheEntry & { fromCache: boolean };
 
+export function stripHtml(html: string): string {
+  if (typeof DOMParser === "undefined") return html;
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return (doc.body.textContent ?? "").replace(/\s+/g, " ").trim();
+}
+
+export async function loadCachedWikipedia(url: string): Promise<WikipediaCacheEntry | null> {
+  const entry = await getWikiCache(url);
+  if (!entry) return null;
+  if (Date.now() - entry.fetchedAt > TTL_MS) return null;
+  return entry;
+}
+
+export async function prewarmWikipediaCache(
+  urls: string[],
+  onProgress?: (done: number, total: number) => void,
+): Promise<void> {
+  let done = 0;
+  for (const url of urls) {
+    try {
+      const cached = await loadCachedWikipedia(url);
+      if (!cached) {
+        await fetchWikipediaSummary(url);
+      }
+    } catch {
+      /* ignore individual failures */
+    }
+    done++;
+    onProgress?.(done, urls.length);
+  }
+}
+
 type WikiUrlParts = {
   host: string;
   lang: string;

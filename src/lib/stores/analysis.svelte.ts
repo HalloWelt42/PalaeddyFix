@@ -81,8 +81,14 @@ class AnalysisStore {
     return false;
   }
 
+  private pendingFreq: { id: string; region?: AnalysisRegion | null } | null = null;
+  private pendingRare: { id: string; region?: AnalysisRegion | null } | null = null;
+
   async analyze(imageId: string, region?: AnalysisRegion | null): Promise<void> {
-    if (this.running) return;
+    if (this.running) {
+      this.pendingFreq = { id: imageId, region: region ?? null };
+      return;
+    }
     const img = await getImage(imageId);
     if (!img) return;
     this.running = true;
@@ -124,11 +130,19 @@ class AnalysisStore {
     } finally {
       this.running = false;
       this.progress = 0;
+      if (this.pendingFreq) {
+        const p = this.pendingFreq;
+        this.pendingFreq = null;
+        void this.analyze(p.id, p.region);
+      }
     }
   }
 
   async analyzeRare(imageId: string, region?: AnalysisRegion | null): Promise<void> {
-    if (this.rareRunning) return;
+    if (this.rareRunning) {
+      this.pendingRare = { id: imageId, region: region ?? null };
+      return;
+    }
     const img = await getImage(imageId);
     if (!img) return;
     const targetCount = this.rareColorCount;
@@ -171,6 +185,11 @@ class AnalysisStore {
     } finally {
       this.rareRunning = false;
       this.rareProgress = 0;
+      if (this.pendingRare) {
+        const p = this.pendingRare;
+        this.pendingRare = null;
+        void this.analyzeRare(p.id, p.region);
+      }
     }
   }
 }
