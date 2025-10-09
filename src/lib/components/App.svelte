@@ -79,10 +79,11 @@
     }
     void (async () => {
       const hadFreq = await analysis.loadCached(id);
-      if (!hadFreq && !analysis.running) {
+      if (!hadFreq) {
         await analysis.analyze(id);
       }
-      if (!analysis.rareCached && !analysis.rareRunning) {
+      const hadRare = await analysis.loadRareCached(id);
+      if (!hadRare) {
         await analysis.analyzeRare(id);
       }
     })();

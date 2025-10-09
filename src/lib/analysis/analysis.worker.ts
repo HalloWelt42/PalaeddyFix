@@ -11,6 +11,7 @@ export type WorkerRequest = {
     colorCount: number;
     downscaleTo: number;
     alpha: AlphaMode;
+    region?: { x: number; y: number; w: number; h: number } | null;
   };
 };
 
@@ -38,9 +39,9 @@ self.addEventListener("message", async (event: MessageEvent<WorkerRequest>) => {
 
   try {
     post({ id: req.id, type: "progress", progress: 0.02 });
-    const { blob, colorCount, downscaleTo, alpha } = req.payload;
+    const { blob, colorCount, downscaleTo, alpha, region } = req.payload;
 
-    const { pixels, alphas, width, height } = await blobToPixels(blob, downscaleTo, alpha);
+    const { pixels, alphas, width, height } = await blobToPixels(blob, downscaleTo, alpha, region);
     post({ id: req.id, type: "progress", progress: 0.25 });
 
     const quantized = medianCut(pixels, colorCount, (p) => {

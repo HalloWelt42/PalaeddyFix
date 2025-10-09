@@ -77,8 +77,15 @@
     const v = Number((e.target as HTMLInputElement).value);
     analysis.setColorCount(v);
     if (!selection.id) return;
-    const hadCache = await analysis.loadCached(selection.id);
+    const region = selection.region;
     if (freqTimer) clearTimeout(freqTimer);
+    if (region) {
+      freqTimer = setTimeout(() => {
+        if (selection.id && !analysis.running) void analysis.analyze(selection.id, selection.region);
+      }, DEBOUNCE_MS);
+      return;
+    }
+    const hadCache = await analysis.loadCached(selection.id);
     if (!hadCache) {
       freqTimer = setTimeout(() => {
         if (selection.id && !analysis.running) void analysis.analyze(selection.id);
@@ -90,8 +97,15 @@
     const v = Number((e.target as HTMLInputElement).value);
     analysis.setRareColorCount(v);
     if (!selection.id) return;
-    const hadCache = await analysis.loadRareCached(selection.id);
+    const region = selection.region;
     if (rareTimer) clearTimeout(rareTimer);
+    if (region) {
+      rareTimer = setTimeout(() => {
+        if (selection.id && !analysis.rareRunning) void analysis.analyzeRare(selection.id, selection.region);
+      }, DEBOUNCE_MS);
+      return;
+    }
+    const hadCache = await analysis.loadRareCached(selection.id);
     if (!hadCache) {
       rareTimer = setTimeout(() => {
         if (selection.id && !analysis.rareRunning) void analysis.analyzeRare(selection.id);

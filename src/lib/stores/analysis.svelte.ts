@@ -3,6 +3,8 @@ import type { PaletteColor } from "../storage/schema";
 import { runAnalysis, type AnalysisOutcome } from "../analysis/runAnalysis";
 import { settings } from "./settings.svelte";
 
+export type AnalysisRegion = { x: number; y: number; w: number; h: number };
+
 export const RARE_COLOR_COUNT = 256;
 
 class AnalysisStore {
@@ -79,7 +81,8 @@ class AnalysisStore {
     return false;
   }
 
-  async analyze(imageId: string): Promise<void> {
+  async analyze(imageId: string, region?: AnalysisRegion | null): Promise<void> {
+    if (this.running) return;
     const img = await getImage(imageId);
     if (!img) return;
     this.running = true;
@@ -92,6 +95,7 @@ class AnalysisStore {
         colorCount: this.colorCount,
         downscaleTo: settings.state.downscaleTo,
         alpha: settings.state.alpha,
+        region,
         onProgress: (p) => {
           this.progress = p;
         },
@@ -102,17 +106,19 @@ class AnalysisStore {
       this.analyzedHeight = outcome.height;
       this.cached = false;
 
-      await putAnalysis({
-        key: analysisKey(imageId, this.colorCount),
-        imageId,
-        colorCount: this.colorCount,
-        algorithm: "median-cut",
-        downscaleTo: settings.state.downscaleTo,
-        alpha: settings.state.alpha,
-        totalPixels: outcome.totalPixels,
-        colors: outcome.colors,
-        createdAt: Date.now(),
-      });
+      if (!region) {
+        await putAnalysis({
+          key: analysisKey(imageId, this.colorCount),
+          imageId,
+          colorCount: this.colorCount,
+          algorithm: "median-cut",
+          downscaleTo: settings.state.downscaleTo,
+          alpha: settings.state.alpha,
+          totalPixels: outcome.totalPixels,
+          colors: outcome.colors,
+          createdAt: Date.now(),
+        });
+      }
     } catch (err) {
       this.error = err instanceof Error ? err.message : String(err);
     } finally {
@@ -121,7 +127,8 @@ class AnalysisStore {
     }
   }
 
-  async analyzeRare(imageId: string): Promise<void> {
+  async analyzeRare(imageId: string, region?: AnalysisRegion | null): Promise<void> {
+    if (this.rareRunning) return;
     const img = await getImage(imageId);
     if (!img) return;
     const targetCount = this.rareColorCount;
@@ -135,6 +142,7 @@ class AnalysisStore {
         colorCount: targetCount,
         downscaleTo: settings.state.downscaleTo,
         alpha: settings.state.alpha,
+        region,
         onProgress: (p) => {
           this.rareProgress = p;
         },
@@ -145,17 +153,19 @@ class AnalysisStore {
       this.analyzedHeight = outcome.height;
       this.rareCached = false;
 
-      await putAnalysis({
-        key: analysisKey(imageId, targetCount),
-        imageId,
-        colorCount: targetCount,
-        algorithm: "median-cut",
-        downscaleTo: settings.state.downscaleTo,
-        alpha: settings.state.alpha,
-        totalPixels: outcome.totalPixels,
-        colors: outcome.colors,
-        createdAt: Date.now(),
-      });
+      if (!region) {
+        await putAnalysis({
+          key: analysisKey(imageId, targetCount),
+          imageId,
+          colorCount: targetCount,
+          algorithm: "median-cut",
+          downscaleTo: settings.state.downscaleTo,
+          alpha: settings.state.alpha,
+          totalPixels: outcome.totalPixels,
+          colors: outcome.colors,
+          createdAt: Date.now(),
+        });
+      }
     } catch (err) {
       this.error = err instanceof Error ? err.message : String(err);
     } finally {

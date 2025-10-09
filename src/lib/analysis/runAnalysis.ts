@@ -40,6 +40,7 @@ export type AnalysisParams = {
   colorCount: number;
   downscaleTo: number;
   alpha: AlphaMode;
+  region?: { x: number; y: number; w: number; h: number } | null;
   onProgress?: (progress: number) => void;
 };
 
@@ -62,6 +63,14 @@ export function runAnalysis(params: AnalysisParams): Promise<AnalysisOutcome> {
         colorCount: params.colorCount,
         downscaleTo: params.downscaleTo,
         alpha: params.alpha,
+        region: params.region
+          ? {
+              x: params.region.x,
+              y: params.region.y,
+              w: params.region.w,
+              h: params.region.h,
+            }
+          : null,
       },
     };
     getWorker().postMessage(req);
