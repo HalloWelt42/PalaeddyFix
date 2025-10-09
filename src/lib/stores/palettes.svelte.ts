@@ -76,6 +76,15 @@ class PalettesStore {
     this.items = this.items.map((p) => (p.id === id ? pal : p));
   }
 
+  async removeColorAt(id: string, index: number): Promise<void> {
+    const pal = this.items.find((p) => p.id === id);
+    if (!pal) return;
+    if (index < 0 || index >= pal.colors.length) return;
+    pal.colors = pal.colors.filter((_, i) => i !== index);
+    await putPalette(pal);
+    this.items = this.items.map((p) => (p.id === id ? pal : p));
+  }
+
   async remove(id: string): Promise<void> {
     await deletePalette(id);
     this.items = this.items.filter((p) => p.id !== id);

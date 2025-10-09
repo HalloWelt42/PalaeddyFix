@@ -207,9 +207,16 @@
                 </button>
               </div>
             </header>
-            <div class="swatches">
-              {#each pal.colors as rgb, i (i)}
-                <span class="sw" style="background: {rgbToHex(rgb)};" title={rgbToHex(rgb)}></span>
+            <div class="swatches own">
+              {#each pal.colors as rgb, i (i + "-" + rgbToHex(rgb))}
+                <button
+                  type="button"
+                  class="sw sw-del"
+                  style="background: {rgbToHex(rgb)};"
+                  title="{rgbToHex(rgb)} – Klick entfernt diese Farbe"
+                  onclick={() => void palettes.removeColorAt(pal.id, i)}
+                  aria-label="Farbe {rgbToHex(rgb)} entfernen"
+                ></button>
               {/each}
             </div>
             <footer>
@@ -446,6 +453,28 @@
     width: 16px;
     height: 16px;
     border: 1px solid var(--border-strong);
+  }
+  .swatches .sw-del {
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+    transition: transform 0.12s;
+  }
+  .swatches .sw-del:hover {
+    transform: scale(1.2);
+    z-index: 1;
+    box-shadow: 0 0 0 2px var(--err);
+  }
+  .swatches .sw-del:hover::after {
+    content: "×";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    text-shadow: 0 0 3px #000;
   }
   .card footer {
     display: flex;

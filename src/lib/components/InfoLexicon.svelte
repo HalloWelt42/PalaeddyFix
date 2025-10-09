@@ -12,6 +12,18 @@
   let searchInput = $state<HTMLInputElement | null>(null);
   let articleEl = $state<HTMLElement | null>(null);
   let wikiTextEl = $state<HTMLElement | null>(null);
+  let sidebarOpen = $state<boolean>(
+    typeof localStorage !== "undefined" ? localStorage.getItem("lexicon-sidebar") !== "closed" : true,
+  );
+
+  function toggleSidebar(): void {
+    sidebarOpen = !sidebarOpen;
+    try {
+      localStorage.setItem("lexicon-sidebar", sidebarOpen ? "open" : "closed");
+    } catch {
+      /* ignore */
+    }
+  }
 
   let wikiData = $state<WikipediaResult | null>(null);
   let wikiLoading = $state<boolean>(false);
@@ -231,10 +243,34 @@
 
 <section class="lexicon">
   <header class="head">
+    <button
+      type="button"
+      class="sidebar-toggle"
+      title={sidebarOpen ? "Artikelliste ausblenden" : "Artikelliste einblenden"}
+      onclick={toggleSidebar}
+    >
+      <Icon name={sidebarOpen ? "x" : "grid"} size={14} />
+    </button>
     <div class="title">
       <Icon name="info" size={16} />
       <h2>Info-Lexikon</h2>
       <span class="sub">{allTopics.length} Artikel</span>
+    </div>
+    <div class="search">
+      <Icon name="search" size={12} />
+      <input
+        bind:this={searchInput}
+        type="text"
+        placeholder="Volltext durchsuchen …"
+        value={info.query}
+        oninput={(e) => info.setQuery((e.currentTarget as HTMLInputElement).value)}
+        onkeydown={onKey}
+      />
+      {#if info.query}
+        <button type="button" class="clear" title="Suche leeren" onclick={clearQuery}>
+          <Icon name="x" size={10} />
+        </button>
+      {/if}
     </div>
     <button
       type="button"
@@ -246,25 +282,9 @@
     </button>
   </header>
 
-  <div class="body">
+  <div class="body" class:sidebar-collapsed={!sidebarOpen}>
+    {#if sidebarOpen}
     <aside class="sidebar">
-      <div class="search">
-        <Icon name="search" size={12} />
-        <input
-          bind:this={searchInput}
-          type="text"
-          placeholder="Volltext durchsuchen …"
-          value={info.query}
-          oninput={(e) => info.setQuery((e.currentTarget as HTMLInputElement).value)}
-          onkeydown={onKey}
-        />
-        {#if info.query}
-          <button type="button" class="clear" title="Suche leeren" onclick={clearQuery}>
-            <Icon name="x" size={10} />
-          </button>
-        {/if}
-      </div>
-
       <ul class="topic-list">
         {#each listMatches as t (t.key)}
           <li>
@@ -285,6 +305,7 @@
         {/each}
       </ul>
     </aside>
+    {/if}
 
     <article class="article" bind:this={articleEl}>
       {#if selectedTopic}
@@ -439,16 +460,34 @@
     height: 48px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 14px;
+    padding: 0 10px;
     border-bottom: 1px solid var(--border);
     background: var(--surface);
+    gap: 10px;
+  }
+  .sidebar-toggle {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-btn);
+    flex-shrink: 0;
+  }
+  .sidebar-toggle:hover {
+    color: var(--text);
+    background: var(--surface-2);
+    border-color: var(--border-strong);
   }
   .title {
     display: flex;
     align-items: center;
     gap: 8px;
     color: var(--info);
+    flex-shrink: 0;
   }
   .title h2 {
     font-family: var(--font-button);
@@ -484,6 +523,9 @@
     grid-template-columns: 280px 1fr;
     min-height: 0;
   }
+  .body.sidebar-collapsed {
+    grid-template-columns: 1fr;
+  }
   .sidebar {
     border-right: 1px solid var(--border);
     display: flex;
@@ -492,15 +534,18 @@
     background: var(--surface);
   }
   .search {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    padding: 10px 12px;
+    flex: 1;
     display: flex;
     align-items: center;
     gap: 6px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    min-width: 0;
+    max-width: 520px;
+    position: relative;
+  }
+  .search :global(.fa-magnifying-glass) {
+    position: absolute;
+    left: 10px;
+    pointer-events: none;
   }
   .search :global(.ic) {
     color: var(--text-mute);
@@ -511,7 +556,7 @@
     background: var(--surface-2);
     border: 1px solid var(--border-strong);
     color: var(--text);
-    padding: 6px 10px;
+    padding: 6px 10px 6px 28px;
     font-family: var(--font-sans);
     font-size: 12px;
     border-radius: var(--radius-btn);
@@ -522,6 +567,8 @@
     border-color: var(--info-line);
   }
   .clear {
+    position: absolute;
+    right: 6px;
     width: 22px;
     height: 22px;
     background: transparent;
