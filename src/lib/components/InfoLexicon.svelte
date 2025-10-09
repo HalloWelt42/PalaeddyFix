@@ -826,6 +826,25 @@
     border: 1px solid var(--border);
     border-radius: 3px;
   }
+  .wiki-text :global(.mwe-math-element),
+  .wiki-text :global(img.mwe-math-fallback-image-inline),
+  .wiki-text :global(img.mwe-math-fallback-image-display),
+  .wiki-text :global(img[src*="render.svg"]),
+  .wiki-text :global(img[src*="wikimedia.org/api/rest_v1/media/math"]) {
+    background: #c8c8cc;
+    border: 0;
+    padding: 2px 4px;
+    border-radius: 2px;
+    vertical-align: middle;
+  }
+  .wiki-text :global(figure img),
+  .wiki-text :global(.thumb img),
+  .wiki-text :global(.thumbinner img),
+  .wiki-text :global(a.image img),
+  .wiki-text :global(a.mw-file-description img) {
+    background: #c8c8cc;
+    padding: 4px;
+  }
   .wiki-text :global(figure) {
     margin: 10px 0;
   }
@@ -840,17 +859,25 @@
     font-size: 12px;
     margin: 8px 0;
     max-width: 100%;
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border);
   }
   .wiki-text :global(th),
   .wiki-text :global(td) {
-    border: 1px solid var(--border);
+    border: 1px solid var(--border) !important;
     padding: 4px 8px;
     text-align: left;
     vertical-align: top;
+    background: transparent !important;
+    color: var(--text) !important;
   }
   .wiki-text :global(th) {
-    background: var(--surface-2);
+    background: var(--surface-2) !important;
     font-weight: 600;
+  }
+  .wiki-text :global(table a) {
+    color: var(--info) !important;
   }
   .wiki-text :global(.mw-editsection),
   .wiki-text :global(.mw-empty-elt),

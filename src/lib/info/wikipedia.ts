@@ -68,7 +68,7 @@ const STRIP_SELECTORS = [
   ".infobox.sisterproject",
 ];
 
-function cleanWikipediaHtml(rawHtml: string, host: string): string {
+function cleanWikipediaHtml(rawHtml: string, host: string, pageUrl: string): string {
   if (typeof DOMParser === "undefined") return absolutizeHtml(rawHtml, host);
   const parser = new DOMParser();
   const doc = parser.parseFromString(rawHtml, "text/html");
@@ -77,13 +77,23 @@ function cleanWikipediaHtml(rawHtml: string, host: string): string {
       el.remove();
     }
   }
+  for (const el of Array.from(doc.querySelectorAll<HTMLElement>("[style]"))) {
+    const style = el.getAttribute("style") ?? "";
+    const cleaned = style
+      .replace(/background(-color)?\s*:\s*[^;]+;?/gi, "")
+      .replace(/(^|\s)color\s*:\s*[^;]+;?/gi, "")
+      .trim();
+    if (cleaned) el.setAttribute("style", cleaned);
+    else el.removeAttribute("style");
+  }
   for (const a of Array.from(doc.querySelectorAll("a[href]"))) {
     const href = a.getAttribute("href") ?? "";
-    if (href.startsWith("/") && !href.startsWith("//")) {
+    if (href.startsWith("//")) {
+      a.setAttribute("href", `https:${href}`);
+    } else if (href.startsWith("/")) {
       a.setAttribute("href", `https://${host}${href}`);
-    }
-    if (href.startsWith("#")) {
-      a.removeAttribute("href");
+    } else if (href.startsWith("#")) {
+      a.setAttribute("href", `${pageUrl}${href}`);
     }
     a.setAttribute("target", "_blank");
     a.setAttribute("rel", "noopener noreferrer");
@@ -130,10 +140,11 @@ export async function fetchWikipediaSummary(
   }
   const summary = (await summaryRes.json()) as SummaryResponse;
 
+  const pageUrl = summary.content_urls?.desktop?.page ?? url;
   let articleHtml = "";
   if (htmlRes.ok) {
     const rawHtml = await htmlRes.text();
-    articleHtml = cleanWikipediaHtml(rawHtml, parts.host);
+    articleHtml = cleanWikipediaHtml(rawHtml, parts.host, pageUrl);
   }
 
   const entry: WikipediaCacheEntry = {
@@ -146,7 +157,7 @@ export async function fetchWikipediaSummary(
     lang: summary.lang ?? parts.lang,
     thumbnail: summary.thumbnail,
     originalImage: summary.originalimage,
-    pageUrl: summary.content_urls?.desktop?.page ?? url,
+    pageUrl,
     fetchedAt: Date.now(),
   };
   await putWikiCache(entry);
