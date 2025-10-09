@@ -192,10 +192,15 @@
 
   const totalMatchCount = $derived(matchCount + currentWikiMatches);
 
+  const activeOwnIdx = $derived(info.matchIndex < matchCount ? info.matchIndex : -1);
+  const activeWikiIdx = $derived(
+    info.matchIndex >= matchCount ? info.matchIndex - matchCount : -1,
+  );
+
   const articleHtml = $derived.by(() => {
     if (!selectedTopic) return "";
     if (!normalized) return selectedTopic.html;
-    return highlightHtml(selectedTopic.html, normalized, info.matchIndex);
+    return highlightHtml(selectedTopic.html, normalized, activeOwnIdx);
   });
 
   function highlightHtml(html: string, needle: string, activeIdx: number): string {
@@ -244,11 +249,10 @@
   }
 
   function scrollActiveIntoView(): void {
-    if (!articleEl) return;
-    const active = articleEl.querySelector(".hit-active");
-    if (active) {
-      active.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+    const inArticle = articleEl?.querySelector(".hit-active") ?? null;
+    const inWiki = wikiTextEl?.querySelector(".hit-active") ?? null;
+    const target = inArticle ?? inWiki;
+    target?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   $effect(() => {
@@ -265,10 +269,10 @@
 
   function onKey(e: KeyboardEvent): void {
     if (e.key !== "Enter") return;
-    if (matchCount === 0) return;
+    if (totalMatchCount === 0) return;
     e.preventDefault();
-    if (e.shiftKey) info.prevMatch(matchCount);
-    else info.nextMatch(matchCount);
+    if (e.shiftKey) info.prevMatch(totalMatchCount);
+    else info.nextMatch(totalMatchCount);
   }
 
   function selectTopic(key: string): void {
@@ -320,6 +324,19 @@
         </button>
       {/if}
     </div>
+    {#if info.query && totalMatchCount > 0}
+      <span class="hit-badge">
+        {totalMatchCount} Treffer
+        {#if currentWikiMatches > 0}
+          ({matchCount}+{currentWikiMatches} Wiki)
+        {/if}
+        {#if totalMatchCount > 0}
+          · {info.matchIndex + 1}/{totalMatchCount}
+        {/if}
+      </span>
+    {:else if info.query && totalMatchCount === 0}
+      <span class="hit-badge muted">Keine Treffer</span>
+    {/if}
     <button
       type="button"
       class="close end"
@@ -361,26 +378,6 @@
           <h1>{selectedTopic.title}</h1>
           {#if selectedTopic.subtitle}
             <p class="subtitle">{selectedTopic.subtitle}</p>
-          {/if}
-          {#if info.query && totalMatchCount > 0}
-            <div class="hit-info">
-              <span>
-                {totalMatchCount} Treffer für „{info.query}"
-                {#if currentWikiMatches > 0}
-                  ({matchCount} Artikel + {currentWikiMatches} Wikipedia)
-                {/if}
-                {#if matchCount > 0}
-                  -- Treffer {info.matchIndex + 1}/{matchCount}
-                {/if}
-              </span>
-              <span class="kbd-hint">
-                <kbd>⏎</kbd> nächster, <kbd>⇧⏎</kbd> voriger
-              </span>
-            </div>
-          {:else if info.query && totalMatchCount === 0}
-            <div class="hit-info muted">
-              Im aktuellen Artikel keine Treffer für „{info.query}".
-            </div>
           {/if}
         </div>
 
@@ -437,7 +434,7 @@
               </div>
             {:else if wikiData}
               {@const wikiBody = wikiData.articleHtml ?? wikiData.extractHtml ?? ""}
-              {@const wikiRendered = normalized && wikiBody ? highlightHtml(wikiBody, normalized, -1) : wikiBody}
+              {@const wikiRendered = normalized && wikiBody ? highlightHtml(wikiBody, normalized, activeWikiIdx) : wikiBody}
               <div class="wiki-body">
                 {#if wikiData.thumbnail}
                   <a
@@ -557,9 +554,26 @@
     margin-left: 4px;
   }
   .close.end {
-    margin-left: auto;
     border: 1px solid var(--border);
     background: var(--surface-2);
+  }
+  .hit-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: var(--info-soft);
+    border: 1px solid var(--info-line);
+    color: var(--info);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    border-radius: 10px;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  .hit-badge.muted {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text-mute);
   }
   .close {
     width: 28px;
@@ -726,28 +740,6 @@
     color: var(--text-dim);
     margin: 4px 0 0;
   }
-  .hit-info {
-    margin-top: 10px;
-    padding: 6px 10px;
-    background: var(--info-soft);
-    border: 1px solid var(--info-line);
-    border-radius: var(--radius-btn);
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text);
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .hit-info.muted {
-    background: var(--surface-2);
-    border-color: var(--border);
-    color: var(--text-dim);
-  }
-  .kbd-hint {
-    color: var(--text-dim);
-  }
   kbd {
     background: var(--surface-2);
     border: 1px solid var(--border-strong);
@@ -804,17 +796,21 @@
   .prose :global(a) {
     color: var(--info);
   }
-  .prose :global(mark.hit) {
-    background: var(--accent-soft);
-    color: var(--text);
+  .prose :global(mark.hit),
+  .wiki-text :global(mark.hit) {
+    background: color-mix(in srgb, var(--accent) 50%, transparent);
+    color: inherit;
     padding: 0 2px;
     border-radius: 2px;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 50%, transparent);
   }
-  .prose :global(mark.hit-active) {
+  .prose :global(mark.hit-active),
+  .wiki-text :global(mark.hit-active) {
     background: var(--accent);
     color: var(--bg);
     outline: 2px solid var(--accent);
     outline-offset: 1px;
+    box-shadow: none;
   }
 
   .wiki-head {
