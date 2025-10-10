@@ -798,19 +798,16 @@
   }
   .prose :global(mark.hit),
   .wiki-text :global(mark.hit) {
-    background: color-mix(in srgb, var(--accent) 50%, transparent);
-    color: inherit;
+    background: var(--accent);
+    color: var(--bg);
     padding: 0 2px;
     border-radius: 2px;
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 50%, transparent);
   }
   .prose :global(mark.hit-active),
   .wiki-text :global(mark.hit-active) {
-    background: var(--accent);
+    background: var(--ok);
     color: var(--bg);
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
-    box-shadow: none;
+    outline: none;
   }
 
   .wiki-head {
