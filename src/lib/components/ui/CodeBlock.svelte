@@ -40,11 +40,67 @@
     );
   }
 
+  function parseColorFromLine(line: string): string | null {
+    const hex8 = line.match(/#[0-9a-fA-F]{8}\b/);
+    if (hex8) return hex8[0];
+    const hex6 = line.match(/#[0-9a-fA-F]{6}\b/);
+    if (hex6) return hex6[0];
+    const hex3 = line.match(/#[0-9a-fA-F]{3}\b/);
+    if (hex3) return hex3[0];
+
+    const rgba = line.match(/rgba?\(\s*\d+[\s,]+\d+[\s,]+\d+(?:[\s,/]+[0-9.]+%?)?\s*\)/i);
+    if (rgba) return rgba[0];
+
+    const hsla = line.match(/hsla?\(\s*\d+[\s,]+\d+%?[\s,]+\d+%?(?:[\s,/]+[0-9.]+%?)?\s*\)/i);
+    if (hsla) return hsla[0];
+
+    const oklch = line.match(/oklch\([^)]+\)/i);
+    if (oklch) return oklch[0];
+
+    // 0xAARRGGBB oder 0xFFRRGGBB (Kotlin/Dart/Swift)
+    const argb = line.match(/0x([0-9a-fA-F]{8})\b/);
+    if (argb) {
+      const v = argb[1];
+      return `#${v.slice(2)}`;
+    }
+
+    // Python tuple: "(r, g, b)" mit Zahlen 0-255, muss mindestens dreistellig sein
+    const tuple = line.match(/\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*(\d{1,3}))?\s*\)/);
+    if (tuple) {
+      const r = Number(tuple[1]);
+      const g = Number(tuple[2]);
+      const b = Number(tuple[3]);
+      if ([r, g, b].every((n) => n >= 0 && n <= 255)) {
+        return `rgb(${r}, ${g}, ${b})`;
+      }
+    }
+
+    // Swift: Color(red: 0.xxx, green: ..., blue: ...)
+    const sw = line.match(/red:\s*([0-9.]+)[^g]+green:\s*([0-9.]+)[^b]+blue:\s*([0-9.]+)/);
+    if (sw) {
+      const r = Math.round(Number(sw[1]) * 255);
+      const g = Math.round(Number(sw[2]) * 255);
+      const b = Math.round(Number(sw[3]) * 255);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    return null;
+  }
+
   const html = $derived.by(() => {
     if (lang === "plain") return escapeHtml(code);
     const grammar = Prism.languages[lang];
     if (!grammar) return escapeHtml(code);
     return Prism.highlight(code, grammar, lang);
+  });
+
+  const lines = $derived.by(() => {
+    const htmlLines = html.split("\n");
+    const textLines = code.split("\n");
+    return htmlLines.map((h, i) => ({
+      html: h,
+      color: parseColorFromLine(textLines[i] ?? ""),
+    }));
   });
 </script>
 
@@ -52,7 +108,12 @@
   {#if filename}
     <figcaption class="caption">{filename}</figcaption>
   {/if}
-  <pre class="pre"><code class="code">{@html html}</code></pre>
+  <pre class="pre"><code class="code"
+    >{#each lines as line, i (i)}<span class="row"><span
+          class="gutter"
+          style={line.color ? `background: ${line.color}` : ""}
+          aria-hidden="true"></span><span class="line"
+          >{@html line.html || "&nbsp;"}</span></span>{#if i < lines.length - 1}{"\n"}{/if}{/each}</code></pre>
 </figure>
 
 <style>
@@ -75,7 +136,7 @@
     letter-spacing: 1px;
   }
   .pre {
-    padding: 10px 12px;
+    padding: 10px 0;
     margin: 0;
     overflow: auto;
     color: var(--text);
@@ -87,6 +148,25 @@
     font-family: inherit;
     font-size: inherit;
     padding: 0;
+    display: block;
+  }
+  .row {
+    display: inline-grid;
+    grid-template-columns: 10px 1fr;
+    gap: 8px;
+    width: 100%;
+    align-items: stretch;
+  }
+  .gutter {
+    display: inline-block;
+    width: 10px;
+    height: 1.55em;
+    border-right: 1px solid var(--border);
+    background: transparent;
+  }
+  .line {
+    display: inline-block;
+    padding-right: 12px;
   }
 
   .pre :global(.token.comment),
