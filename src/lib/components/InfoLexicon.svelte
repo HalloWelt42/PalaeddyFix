@@ -15,7 +15,52 @@
   let sidebarOpen = $state<boolean>(
     typeof localStorage !== "undefined" ? localStorage.getItem("lexicon-sidebar") !== "closed" : true,
   );
+  let wholeWord = $state<boolean>(
+    typeof localStorage !== "undefined" ? localStorage.getItem("lexicon-ww") === "1" : false,
+  );
   let wikiTexts = $state<Record<string, string>>({});
+
+  function toggleWholeWord(): void {
+    wholeWord = !wholeWord;
+    try {
+      localStorage.setItem("lexicon-ww", wholeWord ? "1" : "0");
+    } catch { /* ignore */ }
+  }
+
+  function escapeRegex(s: string): string {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function buildSearchRegex(needle: string, whole: boolean): RegExp | null {
+    if (!needle) return null;
+    const esc = escapeRegex(needle);
+    const pattern = whole ? `\\b${esc}\\b` : esc;
+    try {
+      return new RegExp(pattern, "gi");
+    } catch {
+      return null;
+    }
+  }
+
+  function countMatches(text: string, needle: string, whole: boolean): number {
+    if (!needle) return 0;
+    if (!whole) {
+      let count = 0;
+      let idx = 0;
+      const lower = text.toLowerCase();
+      const n = needle.toLowerCase();
+      while (idx !== -1) {
+        idx = lower.indexOf(n, idx);
+        if (idx === -1) break;
+        count++;
+        idx += n.length;
+      }
+      return count;
+    }
+    const re = buildSearchRegex(needle, true);
+    if (!re) return 0;
+    return (text.match(re) ?? []).length;
+  }
 
   async function loadWikiTexts(): Promise<void> {
     const next: Record<string, string> = {};
@@ -145,16 +190,31 @@
     return `vor ${days} Tag${days === 1 ? "" : "en"}`;
   }
 
-  const normalized = $derived(info.query.trim().toLowerCase());
+  const normalized = $derived(info.query.trim().toLowerCase().replace(/\s+/g, " "));
+
+  function normalizeWs(s: string): string {
+    return s.toLowerCase().replace(/\s+/g, " ");
+  }
 
   const listMatches = $derived.by(() => {
     if (!normalized) return allTopics;
+    if (!wholeWord) {
+      return allTopics.filter((t) => {
+        const own = normalizeWs(t.title + " " + (t.subtitle ?? "") + " " + t.markdown);
+        if (own.includes(normalized)) return true;
+        const wiki = normalizeWs(wikiTexts[t.key] ?? "");
+        return wiki.includes(normalized);
+      });
+    }
+    const re = buildSearchRegex(info.query.trim(), true);
+    if (!re) return allTopics;
     return allTopics.filter((t) => {
-      const own =
-        (t.title + " " + (t.subtitle ?? "") + " " + t.markdown).toLowerCase();
-      if (own.includes(normalized)) return true;
-      const wiki = (wikiTexts[t.key] ?? "").toLowerCase();
-      return wiki.includes(normalized);
+      const own = normalizeWs(t.title + " " + (t.subtitle ?? "") + " " + t.markdown);
+      re.lastIndex = 0;
+      if (re.test(own)) return true;
+      const wiki = normalizeWs(wikiTexts[t.key] ?? "");
+      re.lastIndex = 0;
+      return re.test(wiki);
     });
   });
 
@@ -164,30 +224,12 @@
   });
   const currentWikiMatches = $derived.by(() => {
     if (!normalized || !currentWikiText) return 0;
-    let count = 0;
-    let idx = 0;
-    const t = currentWikiText.toLowerCase();
-    while (idx !== -1) {
-      idx = t.indexOf(normalized, idx);
-      if (idx === -1) break;
-      count++;
-      idx += normalized.length;
-    }
-    return count;
+    return countMatches(normalizeWs(currentWikiText), info.query.trim(), wholeWord);
   });
 
   const matchCount = $derived.by(() => {
     if (!normalized || !selectedTopic) return 0;
-    const text = selectedTopic.markdown.toLowerCase();
-    let count = 0;
-    let idx = 0;
-    while (idx !== -1) {
-      idx = text.indexOf(normalized, idx);
-      if (idx === -1) break;
-      count++;
-      idx += normalized.length;
-    }
-    return count;
+    return countMatches(normalizeWs(selectedTopic.markdown), info.query.trim(), wholeWord);
   });
 
   const totalMatchCount = $derived(matchCount + currentWikiMatches);
@@ -212,16 +254,26 @@
 
     const walker = doc.createTreeWalker(container, NodeFilter.SHOW_TEXT);
     const matches: { node: Text; start: number; end: number }[] = [];
+    const re = wholeWord ? buildSearchRegex(info.query.trim(), true) : null;
     let node: Node | null = walker.nextNode();
     while (node) {
       const text = node.nodeValue ?? "";
-      const lower = text.toLowerCase();
-      let from = 0;
-      let pos = lower.indexOf(needle, from);
-      while (pos !== -1) {
-        matches.push({ node: node as Text, start: pos, end: pos + needle.length });
-        from = pos + needle.length;
-        pos = lower.indexOf(needle, from);
+      if (re) {
+        re.lastIndex = 0;
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(text)) !== null) {
+          matches.push({ node: node as Text, start: m.index, end: m.index + m[0].length });
+          if (m[0].length === 0) re.lastIndex++;
+        }
+      } else {
+        const lower = text.toLowerCase();
+        let from = 0;
+        let pos = lower.indexOf(needle, from);
+        while (pos !== -1) {
+          matches.push({ node: node as Text, start: pos, end: pos + needle.length });
+          from = pos + needle.length;
+          pos = lower.indexOf(needle, from);
+        }
       }
       node = walker.nextNode();
     }
@@ -313,7 +365,7 @@
       <input
         bind:this={searchInput}
         type="text"
-        placeholder="Volltext durchsuchen …"
+        placeholder={wholeWord ? "Ganze Wörter / exakte Sätze …" : "Volltext durchsuchen …"}
         value={info.query}
         oninput={(e) => info.setQuery((e.currentTarget as HTMLInputElement).value)}
         onkeydown={onKey}
@@ -324,6 +376,15 @@
         </button>
       {/if}
     </div>
+    <button
+      type="button"
+      class="ww-toggle"
+      class:active={wholeWord}
+      title={wholeWord ? "Ganzes Wort / Satz (aktiv)" : "Ganze Wörter / exakte Sätze"}
+      onclick={toggleWholeWord}
+    >
+      Ab
+    </button>
     {#if info.query && totalMatchCount > 0}
       <span class="hit-badge">
         {totalMatchCount} Treffer
@@ -556,6 +617,31 @@
   .close.end {
     border: 1px solid var(--border);
     background: var(--surface-2);
+  }
+  .ww-toggle {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-btn);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .ww-toggle:hover {
+    color: var(--text);
+    background: var(--surface-2);
+    border-color: var(--border-strong);
+  }
+  .ww-toggle.active {
+    color: var(--accent);
+    border-color: var(--accent-line);
+    background: var(--accent-soft);
   }
   .hit-badge {
     display: inline-flex;
