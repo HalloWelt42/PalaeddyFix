@@ -2,19 +2,74 @@
   import Icon from "../ui/Icon.svelte";
   import CodeBlock from "../ui/CodeBlock.svelte";
   import { analysis } from "../../stores/analysis.svelte";
+  import { palettes } from "../../stores/palettes.svelte";
+  import { rgbToHex } from "../../analysis/convert";
   import {
     downloadOutput,
     runExport,
     EXPORT_DESCRIPTORS,
     type ExportFormat,
   } from "../../export/formats";
+  import type { PaletteColor } from "../../storage/schema";
+
+  type SourceKey = "frequent" | "rare" | "working" | string;
 
   let format = $state<ExportFormat>("css");
+  let source = $state<SourceKey>("frequent");
   let flash = $state<string | null>(null);
   let flashTimer: ReturnType<typeof setTimeout> | null = null;
 
+  const sourceOptions = $derived.by(() => {
+    const opts: { value: SourceKey; label: string; count: number }[] = [];
+    if (analysis.colors.length > 0) {
+      opts.push({ value: "frequent", label: "Analyse · Häufigste", count: analysis.colors.length });
+    }
+    if (analysis.rareColors.length > 0) {
+      opts.push({ value: "rare", label: "Analyse · Seltenste", count: analysis.rareColors.length });
+    }
+    if (palettes.working.length > 0) {
+      opts.push({ value: "working", label: "Arbeitspalette", count: palettes.working.length });
+    }
+    for (const p of palettes.items) {
+      opts.push({ value: `own-${p.id}`, label: `Eigene · ${p.name}`, count: p.colors.length });
+    }
+    return opts;
+  });
+
+  const sourceColors = $derived.by<PaletteColor[]>(() => {
+    if (source === "frequent") return analysis.colors;
+    if (source === "rare") return analysis.rareColors;
+    if (source === "working") {
+      return palettes.working.map((rgb) => ({
+        rgb,
+        hex: rgbToHex(rgb),
+        count: 1,
+        percent: 100 / Math.max(1, palettes.working.length),
+      }));
+    }
+    if (source.startsWith("own-")) {
+      const id = source.slice(4);
+      const pal = palettes.items.find((p) => p.id === id);
+      if (!pal) return [];
+      return pal.colors.map((rgb) => ({
+        rgb,
+        hex: rgbToHex(rgb),
+        count: 1,
+        percent: 100 / Math.max(1, pal.colors.length),
+      }));
+    }
+    return [];
+  });
+
+  $effect(() => {
+    if (sourceOptions.length === 0) return;
+    if (!sourceOptions.some((o) => o.value === source)) {
+      source = sourceOptions[0].value;
+    }
+  });
+
   const output = $derived(
-    analysis.colors.length > 0 ? runExport(format, analysis.colors) : null,
+    sourceColors.length > 0 ? runExport(format, sourceColors) : null,
   );
 
   const grouped = $derived.by(() => {
@@ -54,13 +109,21 @@
   }
 </script>
 
-{#if analysis.colors.length === 0}
+{#if sourceOptions.length === 0}
   <div class="empty">
     <Icon name="download" size={32} />
     <p>Noch nichts zu exportieren.</p>
-    <p class="sub">Führe erst eine Analyse durch.</p>
+    <p class="sub">Führe erst eine Analyse durch oder öffne eine eigene Palette.</p>
   </div>
 {:else}
+  <div class="control">
+    <label class="k" for="src">Quelle</label>
+    <select id="src" bind:value={source}>
+      {#each sourceOptions as opt (opt.value)}
+        <option value={opt.value}>{opt.label} · {opt.count}</option>
+      {/each}
+    </select>
+  </div>
   <div class="control">
     <label class="k" for="fmt">Format</label>
     <select id="fmt" bind:value={format}>
