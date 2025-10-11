@@ -8,7 +8,10 @@
   import type { PaletteSource } from "../storage/schema";
 
   type Tab = "builtin" | "own";
+  type OwnSort = "recent" | "name" | "size";
   let activeTab = $state<Tab>("builtin");
+  let ownSort = $state<OwnSort>("recent");
+  let ownFilter = $state<string>("");
 
   const builtinPalettes = listBuiltinPalettes();
 
@@ -57,12 +60,24 @@
     snapshot: "Snapshot",
   };
 
-  const ownSorted = $derived(
-    [...palettes.items].sort((a, b) => {
+  const ownSorted = $derived.by(() => {
+    const filter = ownFilter.trim().toLowerCase();
+    let list = [...palettes.items];
+    if (filter) {
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(filter) ||
+          (p.note ?? "").toLowerCase().includes(filter),
+      );
+    }
+    list.sort((a, b) => {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+      if (ownSort === "name") return a.name.localeCompare(b.name, "de");
+      if (ownSort === "size") return b.colors.length - a.colors.length;
       return b.createdAt - a.createdAt;
-    }),
-  );
+    });
+    return list;
+  });
 
   const GROUP_ORDER: PaletteSource[] = [
     "analysis-frequent",
@@ -240,6 +255,37 @@
         das Stern-Icon pinnt, der Mülleimer löscht. Farben einzeln per Klick
         löschen, Karten einklappen zum Vergleichen.
       </p>
+      <div class="own-controls">
+        <div class="filter">
+          <Icon name="search" size={12} />
+          <input
+            type="text"
+            placeholder="Name oder Notiz filtern …"
+            bind:value={ownFilter}
+          />
+        </div>
+        <div class="sort-group">
+          <span class="sort-label">Sortierung</span>
+          <button
+            type="button"
+            class="sort-opt"
+            class:active={ownSort === "recent"}
+            onclick={() => (ownSort = "recent")}
+          >Neueste</button>
+          <button
+            type="button"
+            class="sort-opt"
+            class:active={ownSort === "name"}
+            onclick={() => (ownSort = "name")}
+          >Name</button>
+          <button
+            type="button"
+            class="sort-opt"
+            class:active={ownSort === "size"}
+            onclick={() => (ownSort = "size")}
+          >Größe</button>
+        </div>
+      </div>
       <div class="compare-bar">
         <button type="button" class="compare-btn" onclick={expandAll}>
           Alle ausklappen
@@ -478,6 +524,72 @@
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 12px;
   }
+  .own-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .filter {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+  .filter :global(.ic) {
+    position: absolute;
+    left: 8px;
+    color: var(--text-mute);
+    pointer-events: none;
+  }
+  .filter input {
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    padding: 5px 10px 5px 26px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    border-radius: var(--radius-btn);
+    outline: none;
+    width: 220px;
+  }
+  .filter input:focus {
+    border-color: var(--accent-line);
+  }
+  .sort-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .sort-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-right: 4px;
+  }
+  .sort-opt {
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text-dim);
+    padding: 4px 10px;
+    font-family: var(--font-button);
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: var(--radius-btn);
+    cursor: pointer;
+  }
+  .sort-opt:hover {
+    color: var(--text);
+    border-color: var(--text-dim);
+  }
+  .sort-opt.active {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+
   .compare-bar {
     display: flex;
     align-items: center;
