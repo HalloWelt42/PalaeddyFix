@@ -183,6 +183,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+    flex-wrap: wrap;
   }
   .title {
     display: inline-flex;
@@ -206,6 +207,7 @@
   .actions {
     display: inline-flex;
     gap: 4px;
+    flex-wrap: wrap;
   }
   .btn {
     display: inline-flex;
