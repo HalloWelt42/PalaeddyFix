@@ -434,10 +434,13 @@
         <span class="n">{analysis.colorCount}</span>
       </div>
 
-      <div class="status-bar" class:on={analysis.running}>
+      <div class="status-bar" class:on={analysis.running} class:region={!!selection.region}>
         <span class="status-progress" style="width: {analysis.running ? analysis.progress * 100 : 0}%"></span>
         <span class="status-label">
-          {#if analysis.running}
+          {#if selection.region}
+            Bereich {selection.region.w}×{selection.region.h} --
+            {#if analysis.running}läuft {Math.round(analysis.progress * 100)} %{:else}aktuell{/if}
+          {:else if analysis.running}
             Analyse läuft {Math.round(analysis.progress * 100)} %
           {:else if analysis.cached && analysis.colors.length > 0}
             Aus Cache · automatisch aktualisiert
@@ -509,10 +512,13 @@
         <span class="n">{analysis.rareColorCount}</span>
       </div>
 
-      <div class="status-bar" class:on={analysis.rareRunning}>
+      <div class="status-bar" class:on={analysis.rareRunning} class:region={!!selection.region}>
         <span class="status-progress" style="width: {analysis.rareRunning ? analysis.rareProgress * 100 : 0}%"></span>
         <span class="status-label">
-          {#if analysis.rareRunning}
+          {#if selection.region}
+            Bereich {selection.region.w}×{selection.region.h} --
+            {#if analysis.rareRunning}läuft {Math.round(analysis.rareProgress * 100)} %{:else}aktuell{/if}
+          {:else if analysis.rareRunning}
             Analyse läuft {Math.round(analysis.rareProgress * 100)} %
           {:else if analysis.rareCached && analysis.rareColors.length > 0}
             Aus Cache · automatisch aktualisiert
@@ -740,6 +746,11 @@
   }
   .status-bar.on {
     border-color: var(--accent-line);
+  }
+  .status-bar.region {
+    border-color: var(--accent);
+    color: var(--text);
+    background: var(--accent-soft);
   }
   .status-progress {
     position: absolute;
