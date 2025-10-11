@@ -189,23 +189,23 @@
               >
                 <Icon name={isCollapsed ? "plus" : "x"} size={10} />
               </button>
-              <div class="name-row">
-                {#if pal.infoTopic}
-                  <button
-                    type="button"
-                    class="pal-info"
-                    title="Mehr zur Palette"
-                    onclick={(e) => {
-                      e.stopPropagation();
-                      info.show(pal.infoTopic!);
-                    }}
-                  >
-                    <Icon name="info" size={11} />
-                  </button>
-                {/if}
+              <div class="head-left">
                 <h3>{pal.name}</h3>
+                {#if pal.author && !isCollapsed}<span class="author">{pal.author}</span>{/if}
               </div>
-              {#if pal.author && !isCollapsed}<span class="author">{pal.author}</span>{/if}
+              {#if pal.infoTopic}
+                <button
+                  type="button"
+                  class="pal-info"
+                  title="Mehr zur Palette"
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    info.show(pal.infoTopic!);
+                  }}
+                >
+                  <Icon name="info" size={12} />
+                </button>
+              {/if}
             </header>
             {#if !isCollapsed}
               <div class="swatches">
@@ -547,9 +547,16 @@
   }
   .card header {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 8px;
+  }
+  .head-left {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
   }
   .card h3 {
     font-family: var(--font-button);
@@ -565,19 +572,19 @@
   .pal-info {
     width: 20px;
     height: 20px;
-    border: 1px solid var(--info-line);
-    background: var(--info-soft);
+    border: 0;
+    background: transparent;
     color: var(--info);
     cursor: pointer;
     display: grid;
     place-items: center;
-    border-radius: 50%;
     padding: 0;
+    margin-left: auto;
     flex-shrink: 0;
-    transition: border-color 0.12s, background 0.12s;
+    transition: color 0.12s;
   }
   .pal-info:hover {
-    border-color: var(--info);
+    color: var(--text);
     filter: brightness(1.15);
   }
   .src {
