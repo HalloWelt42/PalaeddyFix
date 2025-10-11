@@ -4,6 +4,7 @@
   import { selection } from "../../stores/selection.svelte";
   import { analysis } from "../../stores/analysis.svelte";
   import { settings } from "../../stores/settings.svelte";
+  import { palettes } from "../../stores/palettes.svelte";
   import { getImage } from "../../storage/db";
   import { listBuiltinPalettes } from "../../palettes/builtin";
   import { runSnap } from "../../analysis/runSnap";
@@ -11,6 +12,19 @@
   import type { Palette } from "../../palettes/schema";
 
   const builtin = listBuiltinPalettes();
+
+  const activeBuiltin = $derived(
+    builtin.filter((p) => palettes.isBuiltinActive(p.id)),
+  );
+  const activeStored = $derived<Palette[]>(
+    palettes.items
+      .filter((p) => p.pinned)
+      .map((p) => ({
+        id: `stored-${p.id}`,
+        name: p.name,
+        colors: p.colors,
+      })),
+  );
 
   let selectedPaletteId = $state<string>(builtin[0].id);
   let ditherMode = $state<DitherMode>("floyd-steinberg");
@@ -39,7 +53,12 @@
     return list;
   });
 
-  const allPalettes = $derived([...ownPalettes, ...builtin]);
+  const allPalettes = $derived.by<Palette[]>(() => {
+    if (activeBuiltin.length === 0 && activeStored.length === 0) {
+      return [...ownPalettes, ...builtin];
+    }
+    return [...ownPalettes, ...activeStored, ...activeBuiltin];
+  });
   const selectedPalette = $derived(
     allPalettes.find((p) => p.id === selectedPaletteId) ?? allPalettes[0],
   );

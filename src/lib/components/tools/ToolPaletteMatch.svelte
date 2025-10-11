@@ -3,12 +3,26 @@
   import InfoLink from "../ui/InfoLink.svelte";
   import { analysis } from "../../stores/analysis.svelte";
   import { settings } from "../../stores/settings.svelte";
+  import { palettes } from "../../stores/palettes.svelte";
   import { formatColor, rgbToHex } from "../../analysis/convert";
   import { listBuiltinPalettes } from "../../palettes/builtin";
   import { matchAllPalettes, perfectMatchIndices } from "../../palettes/match";
   import type { Palette, PaletteMatch } from "../../palettes/schema";
 
   const builtin = listBuiltinPalettes();
+
+  const activeBuiltin = $derived(
+    builtin.filter((p) => palettes.isBuiltinActive(p.id)),
+  );
+  const activeStored = $derived<Palette[]>(
+    palettes.items
+      .filter((p) => p.pinned)
+      .map((p) => ({
+        id: `stored-${p.id}`,
+        name: p.name,
+        colors: p.colors,
+      })),
+  );
 
   const ownPalettes = $derived.by<Palette[]>(() => {
     const list: Palette[] = [];
@@ -31,7 +45,7 @@
     return list;
   });
 
-  const allPalettes = $derived([...ownPalettes, ...builtin]);
+  const allPalettes = $derived([...ownPalettes, ...activeStored, ...activeBuiltin]);
 
   const matches = $derived.by<PaletteMatch[]>(() => {
     if (analysis.colors.length === 0) return [];
@@ -39,7 +53,7 @@
   });
 
   function isOwn(id: string): boolean {
-    return id.startsWith("own-");
+    return id.startsWith("own-") || id.startsWith("stored-");
   }
 
   let matchThreshold = $state<number>(2);
@@ -113,7 +127,12 @@
   <div class="sticky-top">
     <div class="head">
       <h3>Paletten-Vergleich</h3>
-      <span class="count">{allPalettes.length} Paletten</span>
+      <span class="count">
+        {allPalettes.length} Paletten
+        {#if activeBuiltin.length + activeStored.length > 0}
+          · {activeBuiltin.length + activeStored.length} aktiv
+        {/if}
+      </span>
     </div>
 
     <p class="lead">
@@ -121,6 +140,14 @@
       Anteil. Als Distanz dient
       <InfoLink topic="cie2000">Delta E (CIE2000)</InfoLink>.
     </p>
+
+    {#if activeBuiltin.length === 0 && activeStored.length === 0}
+      <div class="hint-empty">
+        Keine fertige oder eigene Palette aktiviert. Markiere in der Galerie
+        Paletten mit dem ⭐ Stern, um sie in den Vergleich aufzunehmen.
+        Aktuell werden nur die Bild-Paletten verglichen.
+      </div>
+    {/if}
 
     <div class="threshold">
       <div class="th-head">
@@ -256,6 +283,17 @@
     color: var(--text-dim);
   }
 
+  .hint-empty {
+    padding: 8px 10px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-line);
+    border-radius: var(--radius-btn);
+    font-family: var(--font-button);
+    font-size: 11px;
+    color: var(--text);
+    line-height: 1.4;
+    margin: 6px 0;
+  }
   .lead {
     font-family: var(--font-button);
     font-size: 12px;
