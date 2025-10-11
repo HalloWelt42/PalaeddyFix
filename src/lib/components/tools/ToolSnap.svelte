@@ -27,6 +27,14 @@
   );
 
   let selectedPaletteId = $state<string>(builtin[0].id);
+
+  $effect(() => {
+    if (allPalettes.length === 0) return;
+    if (!allPalettes.some((p) => p.id === selectedPaletteId)) {
+      const firstActive = activeStored[0] ?? activeBuiltin[0] ?? allPalettes[0];
+      if (firstActive) selectedPaletteId = firstActive.id;
+    }
+  });
   let ditherMode = $state<DitherMode>("floyd-steinberg");
   let running = $state<boolean>(false);
   let progress = $state<number>(0);

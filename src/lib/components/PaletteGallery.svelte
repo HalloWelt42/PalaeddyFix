@@ -351,8 +351,11 @@
                 <div class="own-actions">
                   <button
                     type="button"
-                    class="mini"
-                    title={pal.pinned ? "Pin entfernen" : "Anpinnen"}
+                    class="mini star"
+                    class:active={pal.pinned}
+                    title={pal.pinned
+                      ? "Aus Arbeitsauswahl entfernen"
+                      : "Zur Arbeitsauswahl hinzufügen"}
                     onclick={() => void palettes.togglePin(pal.id)}
                   >
                     <Icon name="star" size={12} />
@@ -773,6 +776,11 @@
     place-items: center;
     border-radius: 3px;
     cursor: pointer;
+  }
+  .mini.star.active {
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-color: var(--accent-line);
   }
   .mini:hover {
     background: var(--surface-2);
