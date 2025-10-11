@@ -1,10 +1,10 @@
 <script lang="ts">
   import Icon from "./ui/Icon.svelte";
-  import InfoLink from "./ui/InfoLink.svelte";
   import PromptModal from "./ui/PromptModal.svelte";
   import { listBuiltinPalettes } from "../palettes/builtin";
   import { rgbToHex } from "../analysis/convert";
   import { palettes } from "../stores/palettes.svelte";
+  import { info } from "../stores/info.svelte";
   import type { PaletteSource } from "../storage/schema";
 
   type Tab = "builtin" | "own";
@@ -190,13 +190,20 @@
                 <Icon name={isCollapsed ? "plus" : "x"} size={10} />
               </button>
               <div class="name-row">
-                <h3>
-                  {#if pal.infoTopic}
-                    <InfoLink topic={pal.infoTopic}>{pal.name}</InfoLink>
-                  {:else}
-                    {pal.name}
-                  {/if}
-                </h3>
+                {#if pal.infoTopic}
+                  <button
+                    type="button"
+                    class="pal-info"
+                    title="Mehr zur Palette"
+                    onclick={(e) => {
+                      e.stopPropagation();
+                      info.show(pal.infoTopic!);
+                    }}
+                  >
+                    <Icon name="info" size={11} />
+                  </button>
+                {/if}
+                <h3>{pal.name}</h3>
               </div>
               {#if pal.author && !isCollapsed}<span class="author">{pal.author}</span>{/if}
             </header>
@@ -554,6 +561,24 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
+  }
+  .pal-info {
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--info-line);
+    background: var(--info-soft);
+    color: var(--info);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    padding: 0;
+    flex-shrink: 0;
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .pal-info:hover {
+    border-color: var(--info);
+    filter: brightness(1.15);
   }
   .src {
     font-family: var(--font-mono);

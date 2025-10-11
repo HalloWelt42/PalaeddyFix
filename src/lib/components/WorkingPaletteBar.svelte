@@ -11,6 +11,37 @@
   const { compact = false }: Props = $props();
 
   let saveOpen = $state<boolean>(false);
+  let dragIndex = $state<number>(-1);
+  let dragOverIndex = $state<number>(-1);
+
+  function onDragStart(i: number, e: DragEvent): void {
+    dragIndex = i;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", String(i));
+    }
+  }
+
+  function onDragOver(i: number, e: DragEvent): void {
+    if (dragIndex < 0) return;
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+    dragOverIndex = i;
+  }
+
+  function onDrop(i: number, e: DragEvent): void {
+    e.preventDefault();
+    if (dragIndex >= 0 && dragIndex !== i) {
+      palettes.workingMove(dragIndex, i);
+    }
+    dragIndex = -1;
+    dragOverIndex = -1;
+  }
+
+  function onDragEnd(): void {
+    dragIndex = -1;
+    dragOverIndex = -1;
+  }
 
   async function confirmSave(name: string): Promise<void> {
     saveOpen = false;
@@ -61,10 +92,17 @@
         <button
           type="button"
           class="sw"
+          class:dragging={dragIndex === i}
+          class:drag-over={dragOverIndex === i && dragIndex !== i}
           style="background: {hex};"
-          title="{hex} – Klick entfernt"
+          title="{hex} – Klick entfernt, Ziehen sortiert"
           onclick={() => palettes.workingRemoveAt(i)}
           aria-label="Farbe {hex} aus Arbeitspalette entfernen"
+          draggable="true"
+          ondragstart={(e) => onDragStart(i, e)}
+          ondragover={(e) => onDragOver(i, e)}
+          ondrop={(e) => onDrop(i, e)}
+          ondragend={onDragEnd}
         ></button>
       {/each}
     {/if}
@@ -177,6 +215,13 @@
     font-size: 12px;
     font-weight: 700;
     text-shadow: 0 0 3px #000;
+  }
+  .sw.dragging {
+    opacity: 0.4;
+  }
+  .sw.drag-over {
+    box-shadow: 0 0 0 2px var(--accent);
+    transform: translateX(2px);
   }
   .hint {
     font-family: var(--font-button);
