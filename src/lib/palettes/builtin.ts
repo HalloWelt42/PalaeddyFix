@@ -51,7 +51,7 @@ const nord = p(
     "#8fbcbb", "#88c0d0", "#81a1c1", "#5e81ac",
     "#bf616a", "#d08770", "#ebcb8b", "#a3be8c", "#b48ead",
   ],
-  { author: "Arctic Ice Studio" },
+  { author: "Arctic Ice Studio", infoTopic: "palette-nord" },
 );
 
 const gruvboxDark = p(
@@ -69,9 +69,7 @@ const gruvboxDark = p(
     "#689d6a", "#8ec07c",
     "#d65d0e", "#fe8019",
   ],
-  {
-    author: "Pavel Pertsev",
-  },
+  { author: "Pavel Pertsev", infoTopic: "palette-gruvbox" },
 );
 
 const gruvboxLight = p(
@@ -89,7 +87,7 @@ const gruvboxLight = p(
     "#427b58", "#689d6a",
     "#af3a03", "#d65d0e",
   ],
-  { author: "Pavel Pertsev" },
+  { author: "Pavel Pertsev", infoTopic: "palette-gruvbox" },
 );
 
 const monokai = p(
@@ -101,7 +99,7 @@ const monokai = p(
     "#f92672", "#fd971f", "#e6db74",
     "#a6e22e", "#66d9ef", "#ae81ff",
   ],
-  { author: "Wimer Hazenberg" },
+  { author: "Wimer Hazenberg", infoTopic: "palette-monokai" },
 );
 
 const oneDark = p(
@@ -127,7 +125,7 @@ const tokyoNight = p(
     "#2ac3de", "#7dcfff", "#7aa2f7",
     "#bb9af7", "#ff007c",
   ],
-  { author: "Enkia" },
+  { author: "Enkia", infoTopic: "palette-tokyo-night" },
 );
 
 const rosePine = p(
@@ -139,7 +137,7 @@ const rosePine = p(
     "#f6c177", "#ebbcba", "#31748f",
     "#9ccfd8", "#c4a7e7", "#524f67",
   ],
-  { author: "rose-pine.com" },
+  { author: "rose-pine.com", infoTopic: "palette-rose-pine" },
 );
 
 const catppuccinMocha = p(
@@ -152,7 +150,7 @@ const catppuccinMocha = p(
     "#fab387", "#f9e2af", "#a6e3a1", "#94e2d5", "#89dceb", "#74c7ec",
     "#89b4fa", "#b4befe",
   ],
-  { author: "Catppuccin" },
+  { author: "Catppuccin", infoTopic: "palette-catppuccin" },
 );
 
 const catppuccinLatte = p(
@@ -165,7 +163,7 @@ const catppuccinLatte = p(
     "#fe640b", "#df8e1d", "#40a02b", "#179299", "#04a5e5", "#209fb5",
     "#1e66f5", "#7287fd",
   ],
-  { author: "Catppuccin" },
+  { author: "Catppuccin", infoTopic: "palette-catppuccin" },
 );
 
 const ansi16 = p(
