@@ -165,6 +165,7 @@ class PalettesStore {
       source: "manual",
       colors: this.working.slice(),
     });
+    await this.togglePin(pal.id);
     return pal;
   }
 }
