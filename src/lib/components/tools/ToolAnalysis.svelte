@@ -194,6 +194,16 @@
     );
     showFlash(`Palette "${name.trim()}" gespeichert`);
   }
+
+  function onColorDragStart(c: PaletteColor, e: DragEvent): void {
+    if (!e.dataTransfer) return;
+    e.dataTransfer.effectAllowed = "copy";
+    e.dataTransfer.setData(
+      "application/x-palaeddy-color",
+      JSON.stringify({ rgb: c.rgb, hex: c.hex }),
+    );
+    e.dataTransfer.setData("text/plain", c.hex);
+  }
 </script>
 
 {#if !selection.id}
@@ -384,8 +394,10 @@
                 type="button"
                 class="color-btn"
                 onclick={() => copyColor(c)}
-                title="Klick zum Kopieren"
+                title="Klick kopiert, Ziehen legt Farbe in die Arbeitspalette"
                 style="--sw: {c.hex};"
+                draggable="true"
+                ondragstart={(e) => onColorDragStart(c, e)}
               >
                 <span class="swatch"></span>
                 <span class="vals">
@@ -464,8 +476,10 @@
                 type="button"
                 class="color-btn"
                 onclick={() => copyColor(c)}
-                title="Klick zum Kopieren"
+                title="Klick kopiert, Ziehen legt Farbe in die Arbeitspalette"
                 style="--sw: {c.hex};"
+                draggable="true"
+                ondragstart={(e) => onColorDragStart(c, e)}
               >
                 <span class="swatch"></span>
                 <span class="vals">
@@ -537,8 +551,10 @@
                 type="button"
                 class="color-btn"
                 onclick={() => copyColor(c)}
-                title="Klick zum Kopieren"
+                title="Klick kopiert, Ziehen legt Farbe in die Arbeitspalette"
                 style="--sw: {c.hex};"
+                draggable="true"
+                ondragstart={(e) => onColorDragStart(c, e)}
               >
                 <span class="swatch"></span>
                 <span class="vals">

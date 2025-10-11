@@ -141,7 +141,12 @@
     <div class="title">
       <Icon name="palette" size={14} />
       <b>Paletten</b>
-      <span class="sub">Sammlungen für Matching, Snap und Export</span>
+      <span class="sub">
+        Sammlungen für Matching, Snap und Export
+        {#if palettes.countActive() > 0}
+          · <span class="active-count">{palettes.countActive()} aktiv</span>
+        {/if}
+      </span>
     </div>
     <div class="tabs" role="tablist">
       <button
@@ -208,19 +213,35 @@
                 <h3>{pal.name}</h3>
                 {#if pal.author && !isCollapsed}<span class="author">{pal.author}</span>{/if}
               </div>
-              {#if pal.infoTopic}
+              <div class="head-right">
+                {#if pal.infoTopic}
+                  <button
+                    type="button"
+                    class="pal-info"
+                    title="Mehr zur Palette"
+                    onclick={(e) => {
+                      e.stopPropagation();
+                      info.show(pal.infoTopic!);
+                    }}
+                  >
+                    <Icon name="info" size={12} />
+                  </button>
+                {/if}
                 <button
                   type="button"
-                  class="pal-info"
-                  title="Mehr zur Palette"
+                  class="pin-btn"
+                  class:active={palettes.isBuiltinActive(pal.id)}
+                  title={palettes.isBuiltinActive(pal.id)
+                    ? "Aus Arbeitsauswahl entfernen"
+                    : "Zur Arbeitsauswahl hinzufügen"}
                   onclick={(e) => {
                     e.stopPropagation();
-                    info.show(pal.infoTopic!);
+                    palettes.toggleBuiltinActive(pal.id);
                   }}
                 >
-                  <Icon name="info" size={12} />
+                  <Icon name="star" size={11} />
                 </button>
-              {/if}
+              </div>
             </header>
             {#if !isCollapsed}
               <div class="swatches">
@@ -431,6 +452,10 @@
   }
   .title b {
     color: var(--text);
+    font-weight: 600;
+  }
+  .active-count {
+    color: var(--accent);
     font-weight: 600;
   }
   .title .sub {
@@ -665,10 +690,33 @@
   }
   .head-left {
     display: inline-flex;
-    align-items: baseline;
+    align-items: center;
     gap: 8px;
     min-width: 0;
     flex: 1;
+  }
+  .pin-btn {
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-mute);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    border-radius: 3px;
+    padding: 0;
+    flex-shrink: 0;
+    transition: color 0.12s, border-color 0.12s, background 0.12s;
+  }
+  .pin-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent-line);
+  }
+  .pin-btn.active {
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-color: var(--accent-line);
   }
   .card h3 {
     font-family: var(--font-button);
@@ -681,6 +729,12 @@
     align-items: center;
     gap: 6px;
   }
+  .head-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
   .pal-info {
     width: 20px;
     height: 20px;
@@ -691,7 +745,6 @@
     display: grid;
     place-items: center;
     padding: 0;
-    margin-left: auto;
     flex-shrink: 0;
     transition: color 0.12s;
   }

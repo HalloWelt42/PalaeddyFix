@@ -13,11 +13,49 @@ function randomId(): string {
   return `pal-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+const ACTIVE_BUILTIN_KEY = "palettes-active-builtin";
+
 class PalettesStore {
   items = $state<StoredPalette[]>([]);
   loaded = $state<boolean>(false);
 
   working = $state<Array<[number, number, number]>>([]);
+
+  activeBuiltin = $state<Set<string>>(this.loadActiveBuiltin());
+
+  private loadActiveBuiltin(): Set<string> {
+    try {
+      const raw = localStorage.getItem(ACTIVE_BUILTIN_KEY);
+      if (!raw) return new Set();
+      return new Set(JSON.parse(raw) as string[]);
+    } catch {
+      return new Set();
+    }
+  }
+
+  private saveActiveBuiltin(): void {
+    try {
+      localStorage.setItem(ACTIVE_BUILTIN_KEY, JSON.stringify([...this.activeBuiltin]));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  toggleBuiltinActive(id: string): void {
+    const next = new Set(this.activeBuiltin);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    this.activeBuiltin = next;
+    this.saveActiveBuiltin();
+  }
+
+  isBuiltinActive(id: string): boolean {
+    return this.activeBuiltin.has(id);
+  }
+
+  countActive(): number {
+    return this.activeBuiltin.size + this.items.filter((p) => p.pinned).length;
+  }
 
   async init(): Promise<void> {
     this.items = await listPalettes();
