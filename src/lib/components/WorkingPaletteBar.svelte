@@ -3,6 +3,8 @@
   import PromptModal from "./ui/PromptModal.svelte";
   import { palettes } from "../stores/palettes.svelte";
   import { rgbToHex } from "../analysis/convert";
+  import type { PaletteColor } from "../storage/schema";
+  import { runExport, downloadOutput } from "../export/formats";
 
   type Props = {
     compact?: boolean;
@@ -13,6 +15,33 @@
   let saveOpen = $state<boolean>(false);
   let dragIndex = $state<number>(-1);
   let dragOverIndex = $state<number>(-1);
+  let copied = $state<boolean>(false);
+
+  const workingAsPalette = $derived<PaletteColor[]>(
+    palettes.working.map((rgb, i) => ({
+      rgb,
+      hex: rgbToHex(rgb),
+      count: 1,
+      percent: 100 / Math.max(1, palettes.working.length),
+    })),
+  );
+
+  async function copyHexList(): Promise<void> {
+    const text = palettes.working.map((c) => rgbToHex(c)).join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      copied = true;
+      setTimeout(() => (copied = false), 1400);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function downloadPalette(): void {
+    if (workingAsPalette.length === 0) return;
+    const out = runExport("hex", workingAsPalette);
+    downloadOutput({ ...out, filename: "arbeitspalette.txt" });
+  }
 
   function onDragStart(i: number, e: DragEvent): void {
     dragIndex = i;
@@ -60,6 +89,23 @@
     </div>
     {#if palettes.working.length > 0}
       <div class="actions">
+        <button
+          type="button"
+          class="btn"
+          title="Hex-Liste in die Zwischenablage"
+          onclick={() => void copyHexList()}
+        >
+          <Icon name={copied ? "check" : "copy"} size={11} />
+          {copied ? "Kopiert" : "Kopieren"}
+        </button>
+        <button
+          type="button"
+          class="btn"
+          title="Als palette.txt herunterladen"
+          onclick={downloadPalette}
+        >
+          <Icon name="download" size={11} /> Download
+        </button>
         <button
           type="button"
           class="btn save"
