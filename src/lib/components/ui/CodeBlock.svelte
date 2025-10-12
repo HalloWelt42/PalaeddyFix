@@ -84,6 +84,17 @@
       return `rgb(${r}, ${g}, ${b})`;
     }
 
+    // GIMP-Palette: "  r   g   b\tName"
+    const gimp = line.match(/^\s*(\d{1,3})\s+(\d{1,3})\s+(\d{1,3})(?:\s|\t|$)/);
+    if (gimp) {
+      const r = Number(gimp[1]);
+      const g = Number(gimp[2]);
+      const b = Number(gimp[3]);
+      if ([r, g, b].every((n) => n >= 0 && n <= 255)) {
+        return `rgb(${r}, ${g}, ${b})`;
+      }
+    }
+
     return null;
   }
 
