@@ -129,6 +129,9 @@
     font-size: 16px;
     filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.45));
     animation: heartbeat 1.6s ease-in-out infinite;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
   .love-btn:hover {
     background: rgba(239, 68, 68, 0.08);

@@ -138,6 +138,8 @@
   .dot.running {
     background: var(--warn);
     animation: pulse 0.9s ease-in-out infinite;
+    will-change: opacity;
+    transform: translateZ(0);
   }
   .top {
     display: inline-flex;

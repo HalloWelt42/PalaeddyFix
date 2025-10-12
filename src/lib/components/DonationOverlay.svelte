@@ -226,6 +226,9 @@
     color: #ef4444;
     filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.5));
     animation: heartbeat 1.5s ease-in-out infinite;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
   .head h2 {
     font-family: var(--font-button);
