@@ -10,7 +10,6 @@
 
   let canvasEl = $state<HTMLCanvasElement | null>(null);
   let wrapperEl = $state<HTMLDivElement | null>(null);
-  let magEl = $state<HTMLCanvasElement | null>(null);
   let hoverRgb = $state<RGB | null>(null);
   let hoverAlpha = $state<number>(255);
   let hoverX = $state<number>(0);
@@ -22,7 +21,6 @@
 
   const MAG_SIZE = 140;
   const MAG_ZOOM = 12;
-  const MAG_SAMPLES = Math.floor(MAG_SIZE / MAG_ZOOM);
 
   const item = $derived(gallery.items.find((i) => i.id === selection.id));
 
@@ -126,7 +124,6 @@
       hoverX = e.clientX - wrapRect.left;
       hoverY = e.clientY - wrapRect.top;
     }
-    drawMagnifier();
   }
 
   const rectOverlay = $derived.by(() => {
@@ -154,73 +151,22 @@
     };
   });
 
-  function drawMagnifier(): void {
-    const src = canvasEl;
-    const mag = magEl;
-    if (!src || !mag) return;
-    const mctx = mag.getContext("2d");
-    if (!mctx) return;
-    if (mag.width !== MAG_SIZE) {
-      mag.width = MAG_SIZE;
-      mag.height = MAG_SIZE;
-    }
-    mctx.imageSmoothingEnabled = false;
-    mctx.clearRect(0, 0, MAG_SIZE, MAG_SIZE);
-    const half = Math.floor(MAG_SAMPLES / 2);
-    const sx = hoverImgX - half;
-    const sy = hoverImgY - half;
-    mctx.save();
-    mctx.beginPath();
-    mctx.arc(MAG_SIZE / 2, MAG_SIZE / 2, MAG_SIZE / 2 - 2, 0, Math.PI * 2);
-    mctx.clip();
-    mctx.fillStyle = "#0a0a0c";
-    mctx.fillRect(0, 0, MAG_SIZE, MAG_SIZE);
-    mctx.drawImage(
-      src,
-      sx,
-      sy,
-      MAG_SAMPLES,
-      MAG_SAMPLES,
-      0,
-      0,
-      MAG_SIZE,
-      MAG_SIZE,
+  const magStyle = $derived.by(() => {
+    if (!selection.fullBlobUrl || !canvasEl) return "";
+    const imgW = canvasEl.width;
+    const imgH = canvasEl.height;
+    if (imgW === 0 || imgH === 0) return "";
+    const bgW = imgW * MAG_ZOOM;
+    const bgH = imgH * MAG_ZOOM;
+    const bgX = MAG_SIZE / 2 - (hoverImgX + 0.5) * MAG_ZOOM;
+    const bgY = MAG_SIZE / 2 - (hoverImgY + 0.5) * MAG_ZOOM;
+    return (
+      `background-image: url("${selection.fullBlobUrl}");` +
+      `background-size: ${bgW}px ${bgH}px;` +
+      `background-position: ${bgX}px ${bgY}px;` +
+      `background-repeat: no-repeat;`
     );
-    mctx.restore();
-
-    const cx = MAG_SIZE / 2;
-    const cy = MAG_SIZE / 2;
-    const pix = MAG_ZOOM;
-
-    mctx.lineWidth = 2;
-    mctx.strokeStyle = "rgba(0, 0, 0, 0.85)";
-    mctx.strokeRect(cx - pix / 2, cy - pix / 2, pix, pix);
-    mctx.lineWidth = 1;
-    mctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
-    mctx.strokeRect(cx - pix / 2 + 0.5, cy - pix / 2 + 0.5, pix - 1, pix - 1);
-
-    mctx.beginPath();
-    mctx.moveTo(cx - pix, cy);
-    mctx.lineTo(cx - pix / 2 - 2, cy);
-    mctx.moveTo(cx + pix / 2 + 2, cy);
-    mctx.lineTo(cx + pix, cy);
-    mctx.moveTo(cx, cy - pix);
-    mctx.lineTo(cx, cy - pix / 2 - 2);
-    mctx.moveTo(cx, cy + pix / 2 + 2);
-    mctx.lineTo(cx, cy + pix);
-    mctx.lineWidth = 2;
-    mctx.strokeStyle = "rgba(0, 0, 0, 0.85)";
-    mctx.stroke();
-    mctx.lineWidth = 1;
-    mctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
-    mctx.stroke();
-
-    mctx.lineWidth = 2;
-    mctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
-    mctx.beginPath();
-    mctx.arc(cx, cy, MAG_SIZE / 2 - 2, 0, Math.PI * 2);
-    mctx.stroke();
-  }
+  });
 
   function onCanvasLeave(): void {
     hoverRgb = null;
@@ -318,13 +264,14 @@
         class="picker"
         style="left:{hoverX + offX}px; top:{hoverY + offY}px;"
       >
-        <canvas
+        <div
           class="mag"
-          bind:this={magEl}
-          width={MAG_SIZE}
-          height={MAG_SIZE}
-          style="width: {MAG_SIZE}px; height: {MAG_SIZE}px;"
-        ></canvas>
+          style="width: {MAG_SIZE}px; height: {MAG_SIZE}px; {magStyle}"
+        >
+          <span class="cross-h"></span>
+          <span class="cross-v"></span>
+          <span class="cross-pix"></span>
+        </div>
         <div class="vals">
           <div class="swatch-wrap">
             <div class="swatch" style="background: {hoverHex}; opacity: {hoverAlpha / 255};"></div>
@@ -424,6 +371,8 @@
     border: 1px solid var(--border);
     display: grid;
     place-items: center;
+    isolation: isolate;
+    contain: layout paint;
   }
   canvas {
     max-width: 100%;
@@ -432,6 +381,8 @@
     image-rendering: auto;
     cursor: crosshair;
     box-shadow: 0 8px 32px #0006;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   .picker {
@@ -441,14 +392,51 @@
     align-items: flex-start;
     gap: 8px;
     z-index: 4;
+    will-change: left, top;
+    transform: translateZ(0);
   }
   .mag {
+    position: relative;
     border-radius: 50%;
     box-shadow:
       0 0 0 2px rgba(255, 255, 255, 0.85),
       0 0 0 3px rgba(0, 0, 0, 0.6),
       0 8px 24px #000c;
-    background: #0a0a0c;
+    background-color: #0a0a0c;
+    image-rendering: pixelated;
+    overflow: hidden;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+  .cross-h,
+  .cross-v {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+  }
+  .cross-h {
+    width: 24px;
+    height: 1px;
+    transform: translate(-50%, -50%);
+  }
+  .cross-v {
+    width: 1px;
+    height: 24px;
+    transform: translate(-50%, -50%);
+  }
+  .cross-pix {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    transform: translate(-50%, -50%);
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.85);
+    pointer-events: none;
   }
   .vals {
     background: var(--surface);
