@@ -261,7 +261,7 @@
     </button>
   </div>
 
-  {#if activeTab !== "zonal"}
+  {#if activeTab !== "zonal" && activeTab !== "einzel"}
     <div class="sort-row">
       <span class="sort-label">Sortierung</span>
       <Segmented options={SORT_OPTIONS} value={sortMode} onchange={onSortChange} />

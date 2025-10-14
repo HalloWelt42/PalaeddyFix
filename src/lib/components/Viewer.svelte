@@ -25,22 +25,30 @@
 
   const item = $derived(gallery.items.find((i) => i.id === selection.id));
 
+  let cachedImage = $state<HTMLImageElement | null>(null);
+
   $effect(() => {
     const url = selection.fullBlobUrl;
     if (!url || !canvasEl) return;
     const img = new Image();
     img.onload = () => {
-      const c = canvasEl;
-      if (!c) return;
-      c.width = img.naturalWidth;
-      c.height = img.naturalHeight;
-      const ctx = c.getContext("2d", { willReadFrequently: true });
-      if (!ctx) return;
-      ctx.clearRect(0, 0, c.width, c.height);
-      ctx.drawImage(img, 0, 0);
+      cachedImage = img;
+      redrawCanvas();
     };
     img.src = url;
   });
+
+  function redrawCanvas(): void {
+    const c = canvasEl;
+    const img = cachedImage;
+    if (!c || !img) return;
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0);
+  }
 
   function formatSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
@@ -234,6 +242,14 @@
     <button
       class="btn"
       type="button"
+      title="Bild neu aus Blob zeichnen (Rendering-Artefakte entfernen)"
+      onclick={redrawCanvas}
+    >
+      <Icon name="magic" size={12} /> Refresh
+    </button>
+    <button
+      class="btn"
+      type="button"
       class:btn-active={selection.rectTool}
       title={selection.rectTool ? "Rechteck-Auswahl deaktivieren" : "Rechteck-Auswahl aktivieren"}
       onclick={() => selection.toggleRectTool()}
@@ -281,7 +297,7 @@
         >
           <span class="cross-h"></span>
           <span class="cross-v"></span>
-          <span class="cross-pix"></span>
+          <span class="cross-pix" style="background: {hoverHex};"></span>
         </div>
         <div class="vals">
           <div class="swatch-wrap">
