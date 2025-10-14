@@ -42,6 +42,7 @@ class SelectionStore {
 
   toggleRectTool(): void {
     this.rectTool = !this.rectTool;
+    if (!this.rectTool) this.region = null;
   }
 
   clear(): void {

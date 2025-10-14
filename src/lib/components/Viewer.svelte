@@ -11,6 +11,17 @@
 
   let canvasEl = $state<HTMLCanvasElement | null>(null);
   let wrapperEl = $state<HTMLDivElement | null>(null);
+  let layoutTick = $state<number>(0);
+
+  $effect(() => {
+    const el = wrapperEl;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      layoutTick++;
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
   let hoverRgb = $state<RGB | null>(null);
   let hoverAlpha = $state<number>(255);
   let hoverX = $state<number>(0);
@@ -137,6 +148,7 @@
   }
 
   const rectOverlay = $derived.by(() => {
+    void layoutTick;
     if (!canvasEl) return null;
     const src = dragStart && dragCurrent
       ? {
