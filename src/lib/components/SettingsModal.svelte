@@ -141,6 +141,63 @@
         </section>
 
         <section>
+          <h3>Viewer & Hintergründe</h3>
+          <div class="row">
+            <div class="label">
+              <div class="name">Bild als &lt;img&gt;</div>
+              <div class="hint">
+                Statt Canvas ein natives img-Element zur Anzeige. Kann
+                Render-Artefakte in Brave/Chromium reduzieren.
+              </div>
+            </div>
+            <input
+              class="checkbox"
+              type="checkbox"
+              checked={settings.state.viewerAsImage}
+              onchange={(e) =>
+                settings.update({
+                  viewerAsImage: (e.currentTarget as HTMLInputElement).checked,
+                })}
+            />
+          </div>
+          <div class="row">
+            <div class="label">
+              <div class="name">Transparenz-Schachbrett</div>
+              <div class="hint">
+                Schachbrett-Muster hinter dem Bild zum Erkennen von Transparenz.
+                Bei Darstellungsproblemen abschalten.
+              </div>
+            </div>
+            <input
+              class="checkbox"
+              type="checkbox"
+              checked={settings.state.viewerCheckerboard}
+              onchange={(e) =>
+                settings.update({
+                  viewerCheckerboard: (e.currentTarget as HTMLInputElement).checked,
+                })}
+            />
+          </div>
+          <div class="row">
+            <div class="label">
+              <div class="name">Punkte-Raster in Drop-Fläche</div>
+              <div class="hint">
+                Dezentes Punkt-Raster als Hintergrund der Ablage-Fläche.
+              </div>
+            </div>
+            <input
+              class="checkbox"
+              type="checkbox"
+              checked={settings.state.dropGrid}
+              onchange={(e) =>
+                settings.update({
+                  dropGrid: (e.currentTarget as HTMLInputElement).checked,
+                })}
+            />
+          </div>
+        </section>
+
+        <section>
           <h3>Speicher</h3>
           <div class="usage">
             <div class="usage-head">

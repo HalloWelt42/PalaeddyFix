@@ -268,15 +268,36 @@
     {/if}
   </div>
 
-  <div class="canvas-wrap" bind:this={wrapperEl} class:rect-mode={selection.rectTool}>
+  <div
+    class="canvas-wrap"
+    bind:this={wrapperEl}
+    class:rect-mode={selection.rectTool}
+    class:no-checker={!settings.state.viewerCheckerboard}
+  >
     <canvas
       bind:this={canvasEl}
+      class:hidden-canvas={settings.state.viewerAsImage}
       onmousemove={onCanvasMove}
       onmouseleave={onCanvasLeave}
       onclick={onCanvasClick}
       onmousedown={onCanvasDown}
       onmouseup={onCanvasUp}
     ></canvas>
+    {#if settings.state.viewerAsImage && selection.fullBlobUrl}
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <img
+        class="viewer-img"
+        src={selection.fullBlobUrl}
+        alt={item?.name ?? "Bild"}
+        onmousemove={onCanvasMove}
+        onmouseleave={onCanvasLeave}
+        onclick={onCanvasClick}
+        onmousedown={onCanvasDown}
+        onmouseup={onCanvasUp}
+        draggable="false"
+      />
+    {/if}
     {#if rectOverlay}
       <div
         class="region-overlay"
@@ -401,7 +422,12 @@
     isolation: isolate;
     contain: layout paint;
   }
-  canvas {
+  .canvas-wrap.no-checker {
+    background-image: none;
+  }
+  canvas,
+  .viewer-img {
+    grid-area: 1 / 1;
     max-width: 100%;
     max-height: 100%;
     display: block;
@@ -410,6 +436,13 @@
     box-shadow: 0 8px 32px #0006;
     transform: translateZ(0);
     backface-visibility: hidden;
+  }
+  canvas.hidden-canvas {
+    visibility: hidden;
+  }
+  .viewer-img {
+    user-select: none;
+    -webkit-user-drag: none;
   }
 
   .picker {

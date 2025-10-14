@@ -11,6 +11,7 @@
   import { gallery } from "../stores/gallery.svelte";
   import { selection } from "../stores/selection.svelte";
   import { ui } from "../stores/ui.svelte";
+  import { settings } from "../stores/settings.svelte";
 
   let fileInput = $state<HTMLInputElement | null>(null);
   let importing = $state<boolean>(false);
@@ -54,7 +55,7 @@
 <main class="main" use:dropzone={{ onFiles: handleFiles }}>
   {#if ui.activeLeft === "drop"}
     <div class="drop-wrap">
-      <div class="drop" class:importing>
+      <div class="drop" class:importing class:no-grid={!settings.state.dropGrid}>
         <div class="inner">
           <div class="glyph">
             <Icon name="upload" size={36} />
@@ -241,6 +242,9 @@
     background-size: 24px 24px;
     background-position: 0 0;
     transition: border-color 0.15s, color 0.15s;
+  }
+  .drop.no-grid {
+    background-image: none;
   }
   .drop.importing {
     opacity: 0.6;

@@ -61,6 +61,9 @@ export type Settings = {
   downscaleTo: number;
   defaultColorCount: number;
   copyFormat: CopyFormat;
+  viewerAsImage: boolean;
+  viewerCheckerboard: boolean;
+  dropGrid: boolean;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -69,6 +72,9 @@ export const DEFAULT_SETTINGS: Settings = {
   downscaleTo: 1024,
   defaultColorCount: 16,
   copyFormat: "hex",
+  viewerAsImage: false,
+  viewerCheckerboard: true,
+  dropGrid: true,
 };
 
 export type PaletteSource =
