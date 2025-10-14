@@ -5,6 +5,7 @@
   import { gallery } from "../stores/gallery.svelte";
   import { settings } from "../stores/settings.svelte";
   import { palettes } from "../stores/palettes.svelte";
+  import { picker } from "../stores/picker.svelte";
   import { formatColor, formatColorA, hasAlpha, rgbToHex } from "../analysis/convert";
   import type { RGB } from "../analysis/convert";
 
@@ -175,6 +176,16 @@
 
   async function onCanvasClick(): Promise<void> {
     if (!hoverRgb) return;
+    if (picker.active) {
+      const hex = rgbToHex(hoverRgb);
+      const added = palettes.workingAdd([hoverRgb[0], hoverRgb[1], hoverRgb[2]]);
+      if (added) triggerFlash(`+ ${hex}`);
+      else {
+        picker.flashDuplicate(hex);
+        triggerFlash(`${hex} schon drin`);
+      }
+      return;
+    }
     const val = hasAlpha(hoverAlpha)
       ? formatColorA(hoverRgb, hoverAlpha, settings.state.copyFormat)
       : formatColor(hoverRgb, settings.state.copyFormat);

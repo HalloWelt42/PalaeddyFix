@@ -10,6 +10,7 @@
   import { settings } from "../../stores/settings.svelte";
   import { gallery } from "../../stores/gallery.svelte";
   import { palettes } from "../../stores/palettes.svelte";
+  import { picker } from "../../stores/picker.svelte";
   import { formatColor, isLight } from "../../analysis/convert";
   import { pickDistinctColors } from "../../analysis/distinct";
   import { sortColors, SORT_OPTIONS, type SortMode } from "../../analysis/sort";
@@ -19,8 +20,12 @@
   import { getImage } from "../../storage/db";
   import type { CopyFormat, PaletteColor, PaletteSource } from "../../storage/schema";
 
-  type TabKey = "frequent" | "rare" | "distinct" | "zonal";
+  type TabKey = "frequent" | "rare" | "distinct" | "zonal" | "einzel";
   let activeTab = $state<TabKey>("frequent");
+
+  $effect(() => {
+    picker.setActive(activeTab === "einzel");
+  });
   let distinctCount = $state<number>(8);
   let sortMode = $state<SortMode>("count");
   let zonalGrid = $state<number>(8);
@@ -246,6 +251,14 @@
     >
       Zonal
     </button>
+    <button
+      type="button"
+      class="tab"
+      class:active={activeTab === "einzel"}
+      onclick={() => (activeTab = "einzel")}
+    >
+      Einzel
+    </button>
   </div>
 
   {#if activeTab !== "zonal"}
@@ -255,7 +268,87 @@
     </div>
   {/if}
 
-  {#if activeTab === "zonal"}
+  {#if activeTab === "einzel"}
+    <div class="tab-panel">
+      <p class="hint-inline">
+        Klicke Pixel für Pixel ins Bild, um eine eigene Palette zu sammeln.
+        Duplikate werden erkannt. Mit dem Löschmodus kannst du Farben per
+        Klick auf den Swatch wieder entfernen.
+      </p>
+
+      <div class="status-bar" class:on={picker.active}>
+        <span class="status-label">
+          {#if !picker.active}
+            Aktiviere den Einzel-Tab -- klicke dann Pixel im Bild
+          {:else if picker.lastDuplicate}
+            {picker.lastDuplicate} ist bereits in der Palette
+          {:else if picker.deleteMode}
+            Löschmodus: Klick auf Swatch entfernt ihn
+          {:else}
+            Bereit -- klicke Farben im Bild zum Sammeln
+          {/if}
+        </span>
+      </div>
+
+      <div class="between">
+        <span class="count">{palettes.working.length} Farben gesammelt</span>
+        <div class="actions">
+          <button
+            type="button"
+            class="save"
+            class:active-danger={picker.deleteMode}
+            title="Löschmodus ein/aus"
+            onclick={() => picker.toggleDelete()}
+          >
+            <Icon name="trash" size={11} />
+            {picker.deleteMode ? "Löschen an" : "Löschen"}
+          </button>
+          <button
+            type="button"
+            class="save"
+            title="Alle Farben aus der Arbeitspalette entfernen"
+            onclick={() => palettes.workingClear()}
+          >
+            Leeren
+          </button>
+        </div>
+      </div>
+
+      {#if palettes.working.length > 0}
+        <ul class="colors">
+          {#each palettes.working as rgb, i (i + "-" + rgbToHex(rgb))}
+            {@const hex = rgbToHex(rgb)}
+            <li>
+              <button
+                type="button"
+                class="color-btn"
+                class:picker-del={picker.deleteMode}
+                title={picker.deleteMode
+                  ? `${hex} entfernen`
+                  : `${hex} kopieren`}
+                style="--sw: {hex};"
+                onclick={() => {
+                  if (picker.deleteMode) palettes.workingRemoveAt(i);
+                  else copyColor({ rgb, hex, count: 1, percent: 0 });
+                }}
+              >
+                <span class="swatch"></span>
+                <span class="vals">
+                  <span class="hex">{hex}</span>
+                  <span class="fmt">{formatColor(rgb, settings.state.copyFormat)}</span>
+                </span>
+                <span class="rank">#{i + 1}</span>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {:else}
+        <div class="hint">
+          Noch keine Farben. Klick Pixel im Bild, um sie hier zu sammeln.
+        </div>
+      {/if}
+    </div>
+  {:else if activeTab === "zonal"}
     <div class="tab-panel">
       <div class="control-row">
         <label class="k" for="cc-zonal">Raster</label>
@@ -630,7 +723,7 @@
 
   .tabs {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: repeat(5, 1fr);
     gap: 0;
     border-bottom: 1px solid var(--border-strong);
     margin-bottom: 14px;
@@ -694,6 +787,14 @@
 
   .wp-inline {
     margin: 8px 0;
+  }
+  .save.active-danger {
+    background: var(--err);
+    color: #fff;
+    border-color: var(--err);
+  }
+  .color-btn.picker-del:hover {
+    background: rgba(248, 113, 113, 0.15);
   }
   .sort-row {
     display: flex;

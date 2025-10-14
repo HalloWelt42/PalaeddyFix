@@ -137,9 +137,10 @@ class PalettesStore {
     this.items = this.items.map((p) => (p.id === id ? pal : p));
   }
 
-  workingAdd(rgb: [number, number, number]): void {
-    if (this.working.some((c) => c[0] === rgb[0] && c[1] === rgb[1] && c[2] === rgb[2])) return;
+  workingAdd(rgb: [number, number, number]): boolean {
+    if (this.working.some((c) => c[0] === rgb[0] && c[1] === rgb[1] && c[2] === rgb[2])) return false;
     this.working = [...this.working, rgb];
+    return true;
   }
 
   workingRemoveAt(idx: number): void {
