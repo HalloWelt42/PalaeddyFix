@@ -133,6 +133,7 @@
       hoverX = e.clientX - wrapRect.left;
       hoverY = e.clientY - wrapRect.top;
     }
+    scheduleAutoRefresh();
   }
 
   const rectOverlay = $derived.by(() => {
@@ -192,6 +193,7 @@
         picker.flashDuplicate(hex);
         triggerFlash(`${hex} schon drin`);
       }
+      queueMicrotask(redrawCanvas);
       return;
     }
     const val = hasAlpha(hoverAlpha)
@@ -203,6 +205,15 @@
     } catch {
       triggerFlash(`kopiert: ${val}`);
     }
+    queueMicrotask(redrawCanvas);
+  }
+
+  let moveRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+  function scheduleAutoRefresh(): void {
+    if (moveRefreshTimer) clearTimeout(moveRefreshTimer);
+    moveRefreshTimer = setTimeout(() => {
+      redrawCanvas();
+    }, 400);
   }
 
   function triggerFlash(msg: string): void {
@@ -239,14 +250,6 @@
       {/if}
     </div>
     <div class="spacer"></div>
-    <button
-      class="btn"
-      type="button"
-      title="Bild neu aus Blob zeichnen (Rendering-Artefakte entfernen)"
-      onclick={redrawCanvas}
-    >
-      <Icon name="magic" size={12} /> Refresh
-    </button>
     <button
       class="btn"
       type="button"
