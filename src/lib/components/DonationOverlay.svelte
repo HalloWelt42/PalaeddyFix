@@ -18,6 +18,8 @@
     qr: string;
   };
 
+  const BASE = import.meta.env.BASE_URL;
+
   const cryptos: Crypto[] = [
     {
       id: "btc",
@@ -26,7 +28,7 @@
       icon: "fa-brands fa-bitcoin",
       color: "#f7931a",
       address: "bc1qnd599khdkv3v3npmj9ufxzf6h4fzanny2acwqr",
-      qr: "/images/btc-qr.svg",
+      qr: `${BASE}images/btc-qr.svg`,
     },
     {
       id: "doge",
@@ -35,7 +37,7 @@
       icon: "fa-solid fa-dog",
       color: "#c3a634",
       address: "DL7tuiYCqm3xQjMDXChdxeQxqUGMACn1ZV",
-      qr: "/images/doge-qr.svg",
+      qr: `${BASE}images/doge-qr.svg`,
     },
     {
       id: "eth",
@@ -44,7 +46,7 @@
       icon: "fa-brands fa-ethereum",
       color: "#627eea",
       address: "0x8A28fc47bFFFA03C8f685fa0836E2dBe1CA14F27",
-      qr: "/images/eth-qr.svg",
+      qr: `${BASE}images/eth-qr.svg`,
     },
   ];
 
@@ -93,9 +95,6 @@
 
       <div class="body">
         <div class="intro">
-          <div class="intro-icon">
-            <i class="fa-solid fa-heart" aria-hidden="true"></i>
-          </div>
           <h3 class="intro-title">PaläddyFix unterstützen</h3>
           <p class="intro-text">
             PaläddyFix ist ein nicht-kommerzielles Open-Source-Projekt und läuft
@@ -167,21 +166,6 @@
           {/if}
         {/each}
 
-        <div class="github-link">
-          <a
-            href="https://github.com/HalloWelt42/PalaeddyFix"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <i class="fa-brands fa-github" aria-hidden="true"></i>
-            <span>Stern auf GitHub geben</span>
-          </a>
-        </div>
-
-        <div class="spende-footer">
-          <i class="fa-solid fa-heart" aria-hidden="true"></i>
-          <span>Vielen Dank für deine Unterstützung!</span>
-        </div>
       </div>
     </div>
   </div>
@@ -269,17 +253,6 @@
     gap: 10px;
     text-align: center;
     max-width: 460px;
-  }
-  .intro-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    display: grid;
-    place-items: center;
-    font-size: 20px;
-    color: #ef4444;
   }
   .intro-title {
     font-family: var(--font-button);
@@ -476,49 +449,6 @@
     background: var(--surface-3);
     color: var(--text);
     border-color: var(--text-dim);
-  }
-
-  .github-link {
-    width: 100%;
-    max-width: 500px;
-    display: flex;
-    justify-content: center;
-    padding-top: 4px;
-  }
-  .github-link a {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: transparent;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-btn);
-    color: var(--text-dim);
-    font-family: var(--font-button);
-    font-size: 12px;
-    font-weight: 600;
-    text-decoration: none;
-    transition: border-color 0.12s, color 0.12s;
-  }
-  .github-link a:hover {
-    border-color: var(--text);
-    color: var(--text);
-  }
-  .github-link i {
-    font-size: 14px;
-  }
-
-  .spende-footer {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
-    font-family: var(--font-button);
-    font-size: 12px;
-    color: var(--text-dim);
-  }
-  .spende-footer i {
-    color: #ef4444;
   }
 
   @keyframes heartbeat {

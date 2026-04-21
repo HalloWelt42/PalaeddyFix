@@ -4,7 +4,7 @@
 
 Ein Farbanalyse- und Paletten-Werkzeug für Bilder -- läuft komplett im Browser, ohne Upload, ohne Backend, ohne Tracker.
 
-![Screenshot: Paletten-Vergleich mit geladenem Bild und Farbanalyse](docs/screenshot.png)
+![Bildschirmfoto 2026-04-21 um 09.59.41.png](docs/Bildschirmfoto%202026-04-21%20um%2009.59.41.png)
 
 ## Überblick
 
