@@ -1,8 +1,10 @@
 # PaläddyFix
 
+### 👉 [Live-Demo: hallowelt42.github.io/PalaeddyFix](https://hallowelt42.github.io/PalaeddyFix/)
+
 Ein Farbanalyse- und Paletten-Werkzeug für Bilder -- läuft komplett im Browser, ohne Upload, ohne Backend, ohne Tracker.
 
-**Live-Demo:** <https://hallowelt42.github.io/PalaeddyFix/>
+![Screenshot: Paletten-Vergleich mit geladenem Bild und Farbanalyse](docs/screenshot.png)
 
 ## Überblick
 
